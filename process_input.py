@@ -7,10 +7,6 @@ import sys
 # using my map projection in R to rescale the locs...                                
 def project_locs(locs,out,seed):
     tmp_name = "." + out + "." + str(seed)
-    comm = "rm "+tmp_name
-    os.system(comm)
-    comm = "rm "+tmp_name+"_proj"
-    os.system(comm)
     with open(tmp_name, "w") as outfile:
         for i in range(len(locs)):
             outfile.write("\t".join(locs[i]) + "\n")
@@ -19,6 +15,10 @@ def project_locs(locs,out,seed):
     os.system(comm)
     new_locs = list(np.array(read_locs(tmp_name+"_proj")).astype(float)) # (shenanigans to get float)
     new_locs = np.array(new_locs)
+    comm = "rm "+tmp_name
+    os.system(comm)      
+    comm = "rm "+tmp_name+"_proj"
+    os.system(comm)              
     return new_locs
 
 # rescale locs to (0,1)                                                      

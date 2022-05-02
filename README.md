@@ -1,8 +1,12 @@
-# Maps
+# disperseNN
 
 ## Install Requirements
 `pip install -r requirements.txt` should cover you
 
+## Example Commands (only the first one is expected to work right now)
+
+### Predict with empirical data, e.g. RADseq
+python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --predict --out out1 --num_snps 5000 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --max_n 100 --mu 1e-8 --seed 12345 --phase 1 --polarize 2 --load_weights out136_2400.12_model.hdf5 --empirical ../Halibut/halibut --bootstrap_reps_radseq 1000 --num_pred 10
 
 ### Train with tree sequences
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --target_list Boxes34/map_list.txt --max_epochs 100 --validation_split 0.2 --num_pred 0 --batch_size 40 --threads 1 --min_n 100 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --tree_list Boxes34/tree_list.txt --recapitate False --mutate True --phase 2 --map_width 50 --sampling_width 1 --on_the_fly 50 --edge_width 3 --train
@@ -16,10 +20,7 @@ python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 
 ### Predict with pre-processed tensors
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets temptargets --max_epochs 100 --validation_split 0.2 --batch_size 1 --threads 1 --min_n 10 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --samplewidth_list tempsamplewidths --geno_list tempgenos --loc_list templocs --pos_list temppos --target_list temptargets --recapitate False --mutate True --phase 1 --preprocess --load_weights /home/chriscs/kernlab/Maps/Boxes66/out136_unphased.17_resumed1_model.hdf5 --predict --num_pred 10
 
-### Predict with empirical data: RADseq
-python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets Hierarchical_2400/map_list.txt --max_epochs 100 --validation_split 0.2 --batch_size 1 --threads 1 --min_n 10 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --recapitate False --mutate True --phase 1 --load_weights out136_unphased.17_model.hdf5 --empirical ../Halibut/halibut --bootstrap_reps_radseq 1000 --predict --num_pred 10
-
-### Predict with empirical data: using pre-processed tensors
+### Predict with empirical data: using pre-processed tensors for genomic windows
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --num_snps 5000 --training_targets Hierarchical_hier1/map_list.txt --validation_split 0.2 --num_pred 10 --batch_size 1 --recapitate False --mutate True --load_weights ../Maps/Important_saved_models/out136_unphased.17_model.hdf5 --geno_list ../AG1000_phase3/geno_list_unphased.txt --pos_list ../AG1000_phase3/pos_list_uphased.txt --empirical ../AG1000_phase3/cameroon_chrY_unplaced_set1 --preprocess --predict --out out1 --phase 1 --max_n 100
 
 ### Minimal filtering for RAD data
