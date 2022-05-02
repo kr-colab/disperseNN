@@ -6,7 +6,7 @@
 ## Example Commands (only the first one is expected to work right now)
 
 ### Predict with empirical data, e.g. RADseq
-python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --predict --out out1 --num_snps 5000 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --max_n 100 --mu 1e-8 --seed 12345 --phase 1 --polarize 2 --load_weights out136_2400.12_model.hdf5 --empirical ../Halibut/halibut --bootstrap_reps_radseq 1000 --num_pred 10
+python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --predict --out out1 --num_snps 5000 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --max_n 100 --mu 1e-8 --seed 12345 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --empirical ExampleVCFs/halibut --bootstrap_reps_radseq 1000 --num_pred 10
 
 ### Train with tree sequences
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --target_list Boxes34/map_list.txt --max_epochs 100 --validation_split 0.2 --num_pred 0 --batch_size 40 --threads 1 --min_n 100 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --tree_list Boxes34/tree_list.txt --recapitate False --mutate True --phase 2 --map_width 50 --sampling_width 1 --on_the_fly 50 --edge_width 3 --train
