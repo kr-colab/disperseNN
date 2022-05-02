@@ -4,31 +4,25 @@
 `pip install -r requirements.txt` should cover you
 
 
-### E.G. TRAIN WITH TREES SEQUENCES
+### Train with tree sequences
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --target_list Boxes34/map_list.txt --max_epochs 100 --validation_split 0.2 --num_pred 0 --batch_size 40 --threads 1 --min_n 100 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --tree_list Boxes34/tree_list.txt --recapitate False --mutate True --phase 2 --map_width 50 --sampling_width 1 --on_the_fly 50 --edge_width 3 --train
 
-### E.G. TRAIN WITH PREPROCESSED DATA
+### Train with pre-processed tensors
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --target_list Hierarchical_2400_unphased/map_list.txt --max_epochs 100 --validation_split 0.2 --batch_size 40 --threads 1 --min_n 100 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --samplewidth_list Hierarchical_2400_unphased/samplewidth_list.txt --geno_list Hierarchical_2400_unphased/geno_list.txt --loc_list Hierarchical_2400_unphased/loc_list.txt --pos_list Hierarchical_2400_unphased/pos_list.txt --recapitate False --mutate True --phase 1 --preprocess --train --map_width 50
 
-### E.G. PREDICT WITH TREE SEQUENCES
+### Predict with tree sequences
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets Boxes54/map_list_raw.txt --max_epochs 100 --validation_split 0.2 --batch_size 10 --threads 10 --min_n 50 --max_n 50 --genome_length 100000000 --mu 1e-8 --seed 12345 --recapitate False --mutate True --phase 2 --sampling_width 1 --on_the_fly 50 --target_list tempmaps --width_list tempwidths --tree_list temptrees --load_weights Boxes54/out142_boxes54.2_model.hdf5 --predict --num_pred 10
 
-### E.G. PREDICT WITH PREPROCESSED SIMS
+### Predict with pre-processed tensors
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets temptargets --max_epochs 100 --validation_split 0.2 --batch_size 1 --threads 1 --min_n 10 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --samplewidth_list tempsamplewidths --geno_list tempgenos --loc_list templocs --pos_list temppos --target_list temptargets --recapitate False --mutate True --phase 1 --preprocess --load_weights /home/chriscs/kernlab/Maps/Boxes66/out136_unphased.17_resumed1_model.hdf5 --predict --num_pred 10
 
-### E.G. PREDICT WITH PREPROCESSED EMPIRICAL DATA
-python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --num_snps 5000 --training_targets Hierarchical_hier1/map_list.txt --validation_split 0.2 --num_pred 100 --batch_size 1 --recapitate False --mutate True --load_weights out136_randAreaRescaleRandN.10_model.hdf5 --geno_list ../AG1000_phase3/geno_list.txt --pos_list ../AG1000_phase3/pos_list.txt --empirical ../AG1000_phase3/cameroon_chrY_unplaced_set1 --preprocess --predict --out out1 --phase 2 --max_n 100
-#
-python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --num_snps 5000 --training_targets Hierarchical_hier1/map_list.txt --validation_split 0.2 --num_pred 10 --batch_size 1 --recapitate False --mutate True --load_weights ../Maps/Important_saved_models/out136_unphased.17_model.hdf5 --geno_list ../AG1000_phase3/geno_list_unphased.txt --pos_list ../AG1000_phase3/pos_list_uphased.txt --empirical ../AG1000_phase3/cameroon_chrY_unplaced_set1 --preprocess --predict --out out1 --phase 1 --max_n 100
-
-### E.G. PREDICT WITH EMPIRICAL DATA (RADseq)
+### Predict with empirical data: RADseq
 python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets Hierarchical_2400/map_list.txt --max_epochs 100 --validation_split 0.2 --batch_size 1 --threads 1 --min_n 10 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --recapitate False --mutate True --phase 1 --load_weights out136_unphased.17_model.hdf5 --empirical ../Halibut/halibut --bootstrap_reps_radseq 1000 --predict --num_pred 10
 
-### pre-process genomic windows from WGS data
-bash pipe_chroms.sh cameroon.vcf.gz cameroon chrom_list.txt cameroon.csv
-bash vcf2windows.sh cameroon 200000 Windows_200Kb_allChroms 5000 chrom_list.txt 
+### Predict with empirical data: using pre-processed tensors
+python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --num_snps 5000 --training_targets Hierarchical_hier1/map_list.txt --validation_split 0.2 --num_pred 10 --batch_size 1 --recapitate False --mutate True --load_weights ../Maps/Important_saved_models/out136_unphased.17_model.hdf5 --geno_list ../AG1000_phase3/geno_list_unphased.txt --pos_list ../AG1000_phase3/pos_list_uphased.txt --empirical ../AG1000_phase3/cameroon_chrY_unplaced_set1 --preprocess --predict --out out1 --phase 1 --max_n 100
 
-### minimal filtering for GBS/RAD data
+### Minimal filtering for RAD data
 1. figure out what samples you want to include. E.g. maybe all samples in the vcf, maybe a geographic cluster.
    For example: oyster RADseq
    oyster_meta.txt # table 1 from paper
@@ -46,3 +40,7 @@ bash vcf2windows.sh cameroon 200000 Windows_200Kb_allChroms 5000 chrom_list.txt
    for i in $(seq 10 $count); do id=$(zcat oyster.vcf.gz | grep -v "##" | grep "#" | cut -f $i); grep -w $id oyster.csv; done | cut -d "," -f 2,3 | sed s/","/"\t"/g > oyster.locs
 
 4. should be good to go!
+
+### Pre-process genomic windows from WGS data
+bash pipe_chroms.sh cameroon.vcf.gz cameroon chrom_list.txt cameroon.csv
+bash vcf2windows.sh cameroon 200000 Windows_200Kb_allChroms 5000 chrom_list.txt
