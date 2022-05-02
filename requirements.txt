@@ -1,0 +1,12 @@
+numpy
+h5py
+scikit-allel
+matplotlib
+scipy
+keras
+tensorflow==1.15
+tqdm
+pandas
+zarr
+gnuplotlib
+scikit-learn
