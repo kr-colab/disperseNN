@@ -11,15 +11,15 @@
 
         Input types:
 
-            * VCF
-            * tree sequences
-            * pre-processed tensors
+            - VCF
+            - tree sequences
+            - pre-processed tensors
 2. training:     by specifying the `--train` flag
 
         Input types:  
 
-      	    * tree sequences
-            * pre-processed tensors
+      	    - tree sequences
+            - pre-processed tensors
 
 Within each mode, you may specify different types of input data, each requiring different sets of command line parameters. 
 
