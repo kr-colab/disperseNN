@@ -25,14 +25,16 @@
       	    - tree sequences
             - pre-processed tensors
 
-Within each mode— predict, or train—, you may specify different types of input data, each requiring additional command line parameters; more details below. 
+Within each mode- prediction or training- you may specify different types of input data, each requiring additional command line parameters; more details below. 
 
 ## Brief instructios with example commands
 Below are example commands for each of the different input types.
 
 ### e.g. prediction: VCF
 
-`python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --out out1 --seed 123451`
+```
+python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --out out1 --seed 123451
+```
 
 ### e.g. prediction: tree sequences
 `python disperseNN.py --predict --empirical ExampleVCFs/halibut --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --sampling_width 1 --on_the_fly 50 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean XX --training_sd XX --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451`
