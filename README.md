@@ -7,13 +7,13 @@
 
 ## Overview
 `disperseNN` has two modes: 
-1. prediction:   specify the `--predict` flag
-      Input types:
+1. prediction:   specify the `--predict` flag  
+      Input types:  
         1. VCF
         2. tree sequences
         3. pre-processed tensors
-2. training:     by specifying the `--train` flag
-      Input types:
+2. training:     by specifying the `--train` flag  
+      Input types:  
       	1. tree sequences
         2. pre-processed tensors
 
