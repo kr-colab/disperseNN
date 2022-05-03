@@ -7,8 +7,8 @@
 
 ## Brief instructions
 `disperseNN` has two modes: 
-* train: by specifying the `--train` flag
-* predict: specify the `--predict` flag
+* train:     by specifying the `--train` flag
+* predict:   specify the `--predict` flag
 
 
 ## Example Commands 
