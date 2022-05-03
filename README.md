@@ -8,10 +8,10 @@
 ## Brief instructions
 `disperseNN` has two modes: 
 * prediction:   specify the `--predict` flag
-    - input -> VCF
-    - input -> tree sequences
+    1. input -> VCF
+    2. input -> tree sequences
 * training:     by specifying the `--train` flag
-    - input -> tree sequences
+    1. input -> tree sequences
 
 Within each mode, different types of input data may be specified, 
 
