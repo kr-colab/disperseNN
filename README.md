@@ -12,7 +12,6 @@
         By specifying the `--predict` flag.
 
         Input types:
-
             - VCF
             - tree sequences
             - pre-processed tensors
