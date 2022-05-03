@@ -1,6 +1,7 @@
 # disperseNN
 
 ## Install Requirements
+`conda create --name dispersenn python=3.8`
 `pip install -r requirements.txt` should cover you
 
 ## Example Commands (only the first one is expected to work right now)
