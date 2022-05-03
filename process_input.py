@@ -11,7 +11,7 @@ def project_locs(locs,out,seed):
         for i in range(len(locs)):
             outfile.write("\t".join(locs[i]) + "\n")
     print("projecting locations...")
-    comm = "Rscript /home/chriscs/kernlab/Maps/Maps/Empirical/lat2km_v3.R " + tmp_name
+    comm = "Rscript Empirical/lat2km_v3.R " + tmp_name # need to make this more robust
     os.system(comm)
     new_locs = list(np.array(read_locs(tmp_name+"_proj")).astype(float)) # (shenanigans to get float)
     new_locs = np.array(new_locs)
