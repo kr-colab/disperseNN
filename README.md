@@ -11,11 +11,11 @@
     - Input types:
         1. VCF
         2. tree sequences
-	3. pre-processed tensors
+        3. pre-processed tensors
 * training:     by specifying the `--train` flag
     - Input types:
       	1. tree sequences
-	2. pre-processed tensors
+        2. pre-processed tensors
 
 Within each mode, different types of input data may be specified, 
 
