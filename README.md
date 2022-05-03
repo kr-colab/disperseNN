@@ -10,7 +10,6 @@
 1. prediction:   specify the `--predict` flag
 
       Input types:
-
         1. VCF
         2. tree sequences
         3. pre-processed tensors
