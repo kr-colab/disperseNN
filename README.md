@@ -20,7 +20,6 @@
         Specify using the `--train` flag.
 
         Input types:  
-
       	    - tree sequences
             - pre-processed tensors
 
