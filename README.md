@@ -9,7 +9,8 @@
 `disperseNN` has two modes: 
 1. prediction
 
-        By specifying the `--predict` flag.
+        Command line flag:
+            --predict
 
         Input types:
             - VCF
@@ -17,7 +18,8 @@
             - pre-processed tensors
 2. training
 
-        Specify using the `--train` flag.
+        Command line flag:
+            --train
 
         Input types:  
       	    - tree sequences
