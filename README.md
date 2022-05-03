@@ -25,7 +25,7 @@
       	    - tree sequences
             - pre-processed tensors
 
-Within each mode, you may specify different types of input data, each requiring different sets of command line parameters. 
+Within each mode— predict, or train—, you may specify different types of input data, each requiring additional command line parameters; more details below. 
 
 ## Brief instructios with example commands
 Below are example commands for each of the different input types.
