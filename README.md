@@ -5,6 +5,12 @@
 
 `pip install -r requirements.txt` should cover you
 
+## Brief instructions
+`disperseNN` has two modes: 
+* train: by specifying the `--train` flag
+* predict: specify the `--predict` flag
+
+
 ## Example Commands 
 
 ### Predict with empirical data, e.g. RADseq
