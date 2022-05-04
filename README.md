@@ -59,19 +59,34 @@ Explanation of command line values:
 
 
 ### Prediction: tree sequences as input
+If you want to predict &#963 in simualted tree sequences, an example command is :
 ```
-python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --sampling_width 1 --on_the_fly 50 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
+python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
 ```
+
+New flags, here:
+- min_n: here, specify both min_n and max_n, to draw a random sample size within that range (or set them equal to each other)
+- genome_length: this is used for rescaling the genomic positions
+- recapitate: recapitate the tree sequence 
+- mutate: add mutations to the tree sequence until the specified number of SNPs are obtained
+- tree_list: list of paths to the tree sequences
+- target_list: list of paths to the targets; the order should correspond to the tree list
+- width_list: list of map widths; the order should correspond to the tree list
+- sampling_width: value	in range (0,1),	proportional to	the map width
+- batch_size: training batch size
+- threads: number of threads 
+
 
 ### Prediction: using pre-processed tensors
 ```
-python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --sampling_width 1 --on_the_fly 50 --preprocess --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
+python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
 ```
 
-python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 --training_targets temptargets --max_epochs 100 --validation_split 0.2 --batch_size 1 --threads 1 --min_n 10 --max_n 100 --genome_length 100000000 --mu 1e-8 --seed 12345 --samplewidth_list tempsamplewidths --geno_list tempgenos --loc_list templocs --pos_list temppos --target_list temptargets --recapitate False --mutate True --phase 1 --preprocess --load_weights /home/chriscs/kernlab/Maps/Boxes66/out136_unphased.17_resumed1_model.hdf5 --predict --num_pred 10
-
-
-
+- preprocess: this flag is used to specify that you're providing pre-processed input tensors
+- geno_list: list of paths to the genotype tensors (.npy)
+- loc_list: list of paths to the locations tensors (.npy)
+- pos_list: list of paths to the positions tensors (.npy)
+- samplewidth_list: list of paths to the sample width tensors (.npy)
 
 
 ### Training: tree sequences as input
