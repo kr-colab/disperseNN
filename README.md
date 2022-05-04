@@ -45,7 +45,7 @@ python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num
 ```
 
 Explanation of command line values:
-- `empirical`: this flag is specific to analyzing VCFs. Give it the shared prefix for the .vcf and .locs files (i.e. no '.vcf' or '.locs')
+- `empirical` : this flag is specific to analyzing VCFs. Give it the shared prefix for the .vcf and .locs files (i.e. no '.vcf' or '.locs')
 - `max_n`: sample size
 - num_snps: number of snps to analyze. This number equals num_snps in the loaded model, but is probably fewer than the VCF lines.
 - phase: '1' for unphased, '2' for phased 
