@@ -94,7 +94,7 @@ New flags, here:
 In some cases we may not want to work with tree sequences, e.g. if the tree sequences are very large or if using a different simulator. Instead it may be useful to pre-process a number of simulations up front (outside of `disperseNN`), and provide the ready-to-go tensors straight to `disperseNN`. Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
 
 ```
-python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list Examples/genos_list2.txt --loc_list Examples/loc_list2.txt --pos_list Examples/pos_list2.txt --samplewidth_list Examples/samplewidth_list2.txt --target_list Examples/target_list2.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345
+python disperseNN/disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list temptrees --target_list tempmap --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 40 --threads 1 --max_epochs 100 --validation_split 0.5 --out out1 --seed 12345
 ```
 
 - `preprocess`: this flag is used to specify that you're providing pre-processed input tensors
@@ -136,7 +136,7 @@ This command used a new combination of flags, but the individual flags should ha
 
 
 
-## Simulation
+### Simulation
 We use the SLiM recipe `SLiM_recipes/map12.slim` to generate training data (tree sequences). The model is borrowed directly from Battey et al. 2021. Certain model parameters are specified on the command line using this recipe. As a demonstration, see the below example command:
 
 ```
@@ -151,9 +151,29 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 
 
 
-## Vignette: example workflow starting with custom simulations
+## Vignette: example workflow
+Here we present a somewhat-realistic analysis beginning with the simulation step. The "somewhat realistic" part just means the data are made up, because a real workflow will take significant computational resources.
 
+### Custom simulations
+[TODO:
+- realistic map? maybe if you have time
+- independently-derived values for density (small ,for this example)
+- example commands
+]
+```
+mkdir Temp_wd
+cd Temp_wd
+```
 
+### Training
+- organize slim output
+- hold out some data for testing
+
+### Testing
+
+### VCF prep.
+
+### Empirical inference
 
 
 
