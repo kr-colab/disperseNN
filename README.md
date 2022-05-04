@@ -129,7 +129,7 @@ Below is an example command for the training step. This example uses tree sequen
 ### Training: with pre-processed tensors
 As before, pre-processed tensors may be used instead of tree sequences:
 ```
-[*** not ready to run yet] python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
+[*** not ready to run yet] python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
 This command used a new combination of flags, but the individual flags should have been described above.
 
