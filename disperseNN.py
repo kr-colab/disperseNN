@@ -33,12 +33,11 @@ parser.add_argument("--num_snps",default=None,type=int,help="maximum number of S
 parser.add_argument("--num_pred",default=None,type=int,help="number of datasets to predict on")
 parser.add_argument("--min_n",default=None,type=int,help="minimum number of samples (for pre-allocating memory)")
 parser.add_argument("--max_n",default=None,type=int,help="maximum number of samples (for pre-allocating memory)")
-parser.add_argument("--mu",help="mutation rate",default=1e-8,type=float)
+parser.add_argument("--mu",help="baseline mutation rate: mu is increased until num_snps is achieved",default=1e-15,type=float)
 parser.add_argument("--rho",help="recombination rate",default=1e-8,type=float)
 parser.add_argument("--on_the_fly",default=1,type=int,help="number of samples (with replacement) from each tree sequence")
 parser.add_argument("--validation_split",default=0.1,type=float,help="0-1, proportion of samples to use for validation. default: 0.1")
-parser.add_argument("--batch_size",default=1,type=int, help="default: 10")
-parser.add_argument("--bootstrap_reps_radseq",default=1,type=int, help="default: 1")
+parser.add_argument("--batch_size",default=1,type=int, help="default: 1")
 parser.add_argument("--max_epochs",default=100,type=int,help="default: 100")
 parser.add_argument("--patience",type=int,default=100,help="n epochs to run the optimizer after last improvement in validation loss. default: 100")
 parser.add_argument("--genome_length",default=1000000,type=int, help="important for rescaling the genomic positions.")
@@ -345,7 +344,7 @@ def prep_empirical(meanSig,sdSig):
     model,checkpointer,earlystop,reducelr = load_network()
 
     # convert vcf to geno matrix                                                                          
-    for i in range(args.bootstrap_reps_radseq):
+    for i in range(args.num_pred):
         test_genos,test_pos= vcf2genos(args.empirical+".vcf",args.max_n,args.num_snps,args.phase)
         test_genos = np.reshape(test_genos, (1,test_genos.shape[0], test_genos.shape[1]))
         test_pos = np.reshape(test_pos, (1,test_pos.shape[0]))

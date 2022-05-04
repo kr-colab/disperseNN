@@ -52,9 +52,10 @@ def check_params(args):
         if args.num_pred == None:
             print("how many pred sets?")
             exit()
-        if (args.num_pred % args.batch_size != 0):
-            print("\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n")
-            exit()
+        if args.batch_size > 1:
+            if (args.num_pred % args.batch_size != 0):
+                print("\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n")
+                exit()
 
     # avoiding information leakage through W and S parameters                                                                                 
     if args.edge_width == None and args.sampling_width != None and args.map_width != None:

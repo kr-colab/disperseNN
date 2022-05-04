@@ -83,7 +83,7 @@ New flags, here:
 - `mutate`: add mutations to the tree sequence until the specified number of SNPs are obtained
 - `tree_list`: list of paths to the tree sequences
 - `target_list`: list of paths to the targets; the order should correspond to the tree list
-- `width_list`: list of map widths; the order should correspond to the tree list. Alternatively, a fixed map width can be provided with `map_width`
+- `width_list`: list of map widths; the order should correspond to the tree list. (Alternatively, a fixed map width can be provided with `map_width`.)
 - `sampling_width`: value in range (0,1), in proportion to the map width
 - `batch_size`: for the data generator
 - `threads`: number of threads 
@@ -119,7 +119,7 @@ python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_leng
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
 - `on_the_fly`: on-the-fly mode takes more than one sample from each tree sequence, augmenting the training set while saving simulation time.
-- `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, individuals are sampled `edge_width` distance from the sides of the map.
+- `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, individuals are sampled edge_width distance from the sides of the map.
 
 
 
@@ -131,7 +131,7 @@ As before, pre-processed tensors may be used instead of tree sequences:
 ```
 python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
-This command used a new combination of flags, but the individual flags should have been described above.,
+This command used a new combination of flags, but the individual flags should have been described above.
 
 
 
@@ -141,6 +141,6 @@ This command used a new combination of flags, but the individual flags should ha
 
 
 ## Simulation
-The authors of `disperseNN` used the slim recipe _____ to generate training data (tree sequences).
+The authors of `disperseNN` used the SLiM recipe _____ to generate training data (tree sequences).
 
 Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 

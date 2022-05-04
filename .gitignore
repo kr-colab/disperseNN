@@ -2,3 +2,5 @@
 *.py[cod]
 *~
 .DS_Store
+estboth.py
+estboth_generator.py
