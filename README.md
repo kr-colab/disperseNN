@@ -5,7 +5,7 @@
 conda create --name dispersenn python=3.8
 
 pip install -r requirements.txt 
-``` should cover you
+``` 
 
 
 ## Overview
