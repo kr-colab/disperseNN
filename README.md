@@ -31,10 +31,9 @@ pip install -r requirements.txt
 Within each mode- prediction or training- you may specify different types of input data, each requiring its own set of additional command line parameters; details below. 
 
 ## Brief instructions with example commands
-Below are example commands for each of the different input types.
 
-### Prediction: using VCF as input
-Below is an example command for estimating \sigma from a VCF file using the pre-trained model `Saved_models/out136_2400.12_model.hdf5`:
+### Prediction: using a VCF as input
+Below is an example command for estimating $\sigma$ from a VCF file using the pre-trained model `Saved_models/out136_2400.12_model.hdf5`:
 ```
 python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --out out1 --seed 123451
 ```
