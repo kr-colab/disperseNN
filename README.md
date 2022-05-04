@@ -1,9 +1,12 @@
 # disperseNN
 
 ## Install Requirements
-`conda create --name dispersenn python=3.8`
+```
+conda create --name dispersenn python=3.8
 
-`pip install -r requirements.txt` should cover you
+pip install -r requirements.txt 
+``` should cover you
+
 
 ## Overview
 `disperseNN` has two modes: 
@@ -30,18 +33,18 @@ Within each mode- prediction or training- you may specify different types of inp
 ## Brief instructions with example commands
 Below are example commands for each of the different input types.
 
-### Prediction: VCF
+### Prediction: using VCF as input
 Below is an example command for estimating \sigma from a VCF file using the pre-trained model `Saved_models/out136_2400.12_model.hdf5`:
 ```
 python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --out out1 --seed 123451
 ```
 
-### Prediction: tree sequences
+### Prediction: tree sequences as input
 ```
 python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --sampling_width 1 --on_the_fly 50 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
 ```
 
-### Prediction: pre-processed tensors
+### Prediction: using pre-processed tensors
 ```
 python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --sampling_width 1 --on_the_fly 50 --preprocess --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
 ```
@@ -52,11 +55,11 @@ python /home/chriscs/kernlab/Maps/Maps/disperseNN.py --out out1 --num_snps 5000 
 
 
 
-### Training: tree sequences
+### Training: tree sequences as input
 ```
 ```
 
-### Training: pre-processed tensors
+### Training: with pre-processed tensors
 ```
 ```
 
