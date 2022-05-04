@@ -59,7 +59,7 @@ Explanation of command line values:
 
 
 ### Prediction: tree sequences as input
-If you want to predict &#963 in simualted tree sequences, an example command is :
+If you want to predict &#963; in simualted tree sequences, an example command is :
 ```
 python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
 ```
