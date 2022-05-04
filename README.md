@@ -159,12 +159,15 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 - independently-derived values for density (small ,for this example)
 - example commands
 ]
-Let's analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km. Furthermore, our *a prior* expectation is that the dispersal rate for this species is somewhere between 0.2 and 1.5 km / generation; we want to explore potential dispersal rates in this range.
+
+Let's analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km. With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;. Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
 
 ```
 mkdir Temp_wd
 cd Temp_wd
 ```
+Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise, it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km (on average; because the census size will fluctuate a bit). 
+
 
 ### Training
 - organize slim output
