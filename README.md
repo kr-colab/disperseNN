@@ -43,7 +43,7 @@ Before handing an empirical VCF to `disperseNN`, it should undergo basic filteri
 
 Below is an example command for estimating &#963; from a VCF file using a pre-trained model:
 ```
-python disperseNN.py --predict --empirical Examples/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345
+python disperseNN.py --predict --empirical Examples/VCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345
 ```
 
 Explanation of command line values:
@@ -69,7 +69,7 @@ Explanation of command line values:
 ### Prediction: tree sequences as input
 If you want to predict &#963; in simulated tree sequences, an example command is:
 ```
-python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/tree_list1.txt --target_list Examples/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345
+python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345
 ```
 
 New flags, here:
@@ -94,7 +94,7 @@ New flags, here:
 In some cases we may not want to work with tree sequences, e.g. if the tree sequences are very large or if using a different simulator. Instead it may be useful to pre-process a number of simulations up front (outside of `disperseNN`), and provide the ready-to-go tensors straight to `disperseNN`. Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
 
 ```
-python disperseNN/disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list temptrees --target_list tempmap --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 40 --threads 1 --max_epochs 100 --validation_split 0.5 --out out1 --seed 12345
+python disperseNN.py --predict --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345
 ```
 
 - `preprocess`: this flag is used to specify that you're providing pre-processed input tensors
@@ -111,7 +111,7 @@ python disperseNN/disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
 ```
-python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/tree_list1.txt --target_list Examples/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
+python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
@@ -125,7 +125,7 @@ python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_leng
 ### Training: with pre-processed tensors
 As before, pre-processed tensors may be used instead of tree sequences:
 ```
-[*** not ready to run yet] python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 12345
+python disperseNN.py --train --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out2 --seed 123451
 ```
 This command used a new combination of flags, but the individual flags should have been described above.
 
