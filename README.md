@@ -1,8 +1,8 @@
 # disperseNN
 
-## Install Requirements
+## Install requirements
 ```
-conda create --name dispersenn python=3.8
+(optional: ) conda create --name dispersenn python=3.8
 
 pip install -r requirements.txt 
 ``` 
@@ -28,7 +28,7 @@ pip install -r requirements.txt
       	    - tree sequences
             - pre-processed tensors
 
-Within each mode- prediction or training- you may specify different types of input data, each requiring additional command line parameters; more details below. 
+Within each mode- prediction or training- you may specify different types of input data, each requiring its own set of additional command line parameters; details below. 
 
 ## Brief instructions with example commands
 Below are example commands for each of the different input types.
