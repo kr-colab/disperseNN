@@ -152,7 +152,7 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 
 
 ## Vignette: example workflow
-Here we present a somewhat-realistic analysis beginning with the simulation step. The "somewhat realistic" part just means the data are made up, because a real workflow will take significant computational resources.
+Here we present a somewhat-realistic analysis. The "somewhat realistic" part just means that the data are made up, because a real workflow will take significant computational time.
 
 ### Custom simulations
 [TODO:
@@ -160,6 +160,8 @@ Here we present a somewhat-realistic analysis beginning with the simulation step
 - independently-derived values for density (small ,for this example)
 - example commands
 ]
+Let's analyze a population of *Internecivus raptus*. 
+
 ```
 mkdir Temp_wd
 cd Temp_wd
