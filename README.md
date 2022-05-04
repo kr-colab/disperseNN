@@ -111,7 +111,7 @@ python disperseNN.py --predict --preprocess --min_n 100 --max_n 100 --num_snps 5
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
 ```
-python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
+python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.5 --out out1 --seed 12345
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
@@ -125,7 +125,7 @@ python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_leng
 ### Training: with pre-processed tensors
 As before, pre-processed tensors may be used instead of tree sequences:
 ```
-python disperseNN.py --train --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out2 --seed 123451
+python disperseNN.py --train --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --batch_size 5 --threads 1 --max_epochs 100 --validation_split 0.5 --out out2 --seed 12345
 ```
 This command used a new combination of flags, but the individual flags should have been described above.
 
