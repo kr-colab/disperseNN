@@ -275,7 +275,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         X3 = np.empty( (self.batch_size, 2, self.max_n) ) # locs
         X4 = np.empty( (self.batch_size,) ) # sample widths
         y = np.empty( (self.batch_size), dtype=float) # targets (sigma)
-        
+
         if self.preprocessed == False:
             ts_list = []
             width_list = []
