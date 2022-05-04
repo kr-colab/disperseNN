@@ -111,7 +111,7 @@ python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
 ```
-python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
+python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/tree_list1.txt --target_list Examples/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
@@ -151,8 +151,9 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 
 
 
+## Vignette: example workflow starting with custom simulations
 
-## Vignette: example workflow with custom training data
+
 
 
 
