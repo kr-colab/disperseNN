@@ -141,6 +141,24 @@ This command used a new combination of flags, but the individual flags should ha
 
 
 ## Simulation
-The authors of `disperseNN` used the SLiM recipe _____ to generate training data (tree sequences).
+We use the SLiM recipe `SLiM_recipes/map12.slim` to generate training data (tree sequences). Certain model parameters are specified on the command line using this recipe. As a demonstration, see the below example command:
+
+```
+slim -d SEED=12345 -d sigma=0.5 -d K=5 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100000 -d OUTNAME=output SLiM_recipes/map12.slim
+```
 
 Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
+
+
+
+
+
+
+
+## Vignette: example workflow with custom training data
+
+
+
+
+
+

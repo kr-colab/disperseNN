@@ -2,3 +2,5 @@ keras
 tensorflow==2.2
 msprime
 numpy
+tskit
+slim
