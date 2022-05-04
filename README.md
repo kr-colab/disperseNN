@@ -33,10 +33,24 @@ Within each mode- prediction or training- you may specify different types of inp
 ## Brief instructions with example commands
 
 ### Prediction: using a VCF as input
-Below is an example command for estimating &#963; from a VCF file using the pre-trained model `Saved_models/out136_2400.12_model.hdf5`:
+Below is an example command for estimating &#963; from a VCF file using a pre-trained model:
 ```
 python disperseNN.py --predict --empirical ExampleVCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --out out1 --seed 123451
 ```
+
+Explanation of command line values:
+- empirical: 
+- max_n:
+- num_snps:
+- phase:
+- polarize:
+- load_weights:
+- training_mean:
+- training_sd:
+- num_pred:
+- out:
+- seed:
+
 
 ### Prediction: tree sequences as input
 ```
