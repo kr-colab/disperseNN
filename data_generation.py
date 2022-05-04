@@ -85,7 +85,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 # ********** WARNING: don't change anything here without matching add_mutations_v2.py *************** 
 
         # read input
-        print(filepath)
+        #print(filepath)
         sys.stdout.flush()
         ts = tskit.load(filepath)
         np.random.seed(seed)
