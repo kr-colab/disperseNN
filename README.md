@@ -39,11 +39,7 @@ Within each mode- prediction or training- you may specify different types of inp
 ## Brief instructions with example commands
 
 ### Prediction: using a VCF as input
-An empirical VCF should undergo some basic filtering steps, e.g. to remove non-variant sites, extra samples, etc. This can be accomplished using the build in script `subset_vcf.py`.
-
-   TODO
-
-Next, you need a locations file with two columns for lat and long. **** oh dang, or is it the other way around?
+Before handing an empirical VCF to `disperseNN`, it should undergo basic filtering steps to remove non-variant sites and indels; rare variants should be left in. Furthermore, the VCF should include only the individuals that you intend to analyze. Any number of SNPs can be left in the VCF, because `disperseNN` will draw a random subset. Last, a .locs file should be prepared with two columns corresponding to the lat. and long. spatial coordinates for each indvidual. The order of samples in the .vcf and .locs should match.
 
 Below is an example command for estimating &#963; from a VCF file using a pre-trained model:
 ```
@@ -145,9 +141,10 @@ We use the SLiM recipe `SLiM_recipes/map12.slim` to generate training data (tree
 
 ```
 slim -d SEED=12345 -d sigma=0.2 -d K=5 -d mu=0 -d r=1e-8 -d W=25 -d G=1e8 -d maxgens=100000 -d OUTNAME="'output'" SLiM_recipes/map12.slim
+       # Note the two sets of quotes around the output name
 ```
 
-Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
+Simulation programs other than SLiM may be used to make tral mnining data, as long as the output is processed into tensors of the necessary shape. 
 
 
 
