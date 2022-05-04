@@ -152,7 +152,6 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 
 
 ## Vignette: example workflow
-Here we present a somewhat-realistic analysis. The "somewhat realistic" part just means that the data are made up, because a real workflow will take significant computational time.
 
 ### Custom simulations
 [TODO:
@@ -160,7 +159,7 @@ Here we present a somewhat-realistic analysis. The "somewhat realistic" part jus
 - independently-derived values for density (small ,for this example)
 - example commands
 ]
-Let's analyze a population of *Internecivus raptus*. 
+Let's analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km. Furthermore, our *a prior* expectation is that the dispersal rate for this species is somewhere between 0.2 and 1.5 km / generation; we want to explore potential dispersal rates in this range.
 
 ```
 mkdir Temp_wd
