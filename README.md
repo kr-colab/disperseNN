@@ -98,7 +98,7 @@ New flags, here:
 In some cases we may not want to work with tree sequences, e.g. if the tree sequences are very large or if using a different simulator. Instead it may be useful to pre-process a number of simulations up front (outside of `disperseNN`), and provide the ready-to-go tensors straight to `disperseNN`. Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
 
 ```
-python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --batch_size 10 --threads 10 --out out1 --seed 123451
+python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list Examples/genos_list2.txt --loc_list Examples/loc_list2.txt --pos_list Examples/pos_list2.txt --samplewidth_list Examples/samplewidth_list2.txt --target_list Examples/target_list2.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 123451
 ```
 
 - `preprocess`: this flag is used to specify that you're providing pre-processed input tensors
@@ -115,7 +115,7 @@ python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_le
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
 ```
-python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list Examples/genos_list2.txt --loc_list Examples/loc_list2.txt --pos_list Examples/pos_list2.txt --samplewidth_list Examples/samplewidth_list2.txt --target_list Examples/target_list2.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 123451
+[*** not ready to run yet] python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list Examples/genos_list2.txt --loc_list Examples/loc_list2.txt --pos_list Examples/pos_list2.txt --samplewidth_list Examples/samplewidth_list2.txt --target_list Examples/target_list2.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 123451
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
