@@ -30,6 +30,12 @@ pip install -r requirements.txt
 
 Within each mode- prediction or training- you may specify different types of input data, each requiring its own set of additional command line parameters; details below. 
 
+
+
+
+
+
+
 ## Brief instructions with example commands
 
 ### Prediction: using a VCF as input
@@ -58,6 +64,12 @@ Explanation of command line values:
 - `seed`: random number seed
 
 
+
+
+
+
+
+
 ### Prediction: tree sequences as input
 If you want to predict &#963; in simulated tree sequences, an example command is:
 ```
@@ -77,8 +89,12 @@ New flags, here:
 - `threads`: number of threads 
 
 
+
+
+
+
 ### Prediction: using pre-processed tensors
-In some cases, e.g. if the tree sequences are very large, it may instead be useful to pre-process a number of simulations up front (outside of `disperseNN`). Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
+In some cases we may not want to work with tree sequences, e.g. if the tree sequences are very large or if using a different simulator. Instead it may be useful to pre-process a number of simulations up front (outside of `disperseNN`), and provide the ready-to-go tensors straight to `disperseNN`. Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
 
 ```
 python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --preprocess --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1000 --batch_size 10 --threads 10 --out out1 --seed 123451
@@ -91,22 +107,38 @@ python disperseNN.py --predict --min_n 50 --max_n 50 --num_snps 5000 --genome_le
 - `samplewidth_list`: list of paths to the sample width tensors (.npy)
 
 
+
+
+
+
 ### Training: tree sequences as input
+Below is an example command for the training step. This example uses tree sequences as input.
 ```
 python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list tree_list.txt --target_list target_list.txt --width_list width_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
 - `on_the_fly`: on-the-fly mode takes more than one sample from each tree sequence, augmenting the training set while saving simulation time.
-- `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, indidividuals are sampled `edge_width` distance from the sides of the map.
+- `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, individuals are sampled `edge_width` distance from the sides of the map.
+
 
 
 
 
 
 ### Training: with pre-processed tensors
+As before, pre-processed tensors may be used instead of tree sequences:
 ```
+python disperseNN.py --train --min_n 50 --max_n 50 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list geno_list.txt --loc_list loc_list.txt --pos_list pos_list.txt --samplewidth_list sample_widths.txt --target_list target_list.txt --sampling_width 1 --on-the-fly 50 --batch_size 10 --threads 10 --max_epochs 100 --validation_split 0.2 --out out1 --seed 123451
 ```
+This command used a new combination of flags, but the individual flags should have been described above.,
+
+
+
+
+
+
+
 
 ## Simulation
 The authors of `disperseNN` used the slim recipe _____ to generate training data (tree sequences).
