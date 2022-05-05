@@ -229,13 +229,13 @@ This `val_results.txt file` shows that our &#963; estimates are accurate.
 ### VCF prep.
 Now it's time to prepare our empirical VCF for inference with `disperseNN`. This means taking a subset of individuals that we want to analyze, and other basic filters, e.g. removing indels and non-variants sites. Separately, we want a .locs file with the same prefix as the .vcf.
 
-In our case we want to take a subset of individuals from a particular geographic region, the Scotian Shelf region. Further, we want to include only a single individual per sampling location; this is important because individuals did not have overlapping locations in the training simulations, which might trip up the neural network. Last, because we have the option, let's include only female samples. Below are some example commands that might be used to parse the metadata, but these steps will certainly be different for other empirical tables.
+In our case we want to take a subset of individuals from a particular geographic region, the Scotian Shelf region. Further, we want to include only a single individual per sampling location; this is important because individuals did not have overlapping locations in the training simulations, which might trip up the neural network. Below are some example commands that might be used to parse the metadata, but these steps will certainly be different for other empirical tables.
 
 ```
 # [these commands are gross; but I want to eventually switch over to simulated data, so these steps will change]
 cat ../Examples/VCFs/iraptus_meta_full.txt | grep "Scotian Shelf - East" | cut -f 4,5 | sort | uniq > templocs
 count=$(wc -l templocs | awk '{print $1}')
-for i in $(seq 1 $count); do locs=$(head -$i templocs | tail -1); lat=$(echo $locs | awk '{print $1}'); long=$(echo $locs | awk '{print $2}'); grep $lat ../Examples/VCFs/iraptus_meta_full.txt | awk -v coord=$long '$5 == coord' | awk '$2 == "F"' | shuf | head -1; done > iraptus_meta.txt
+for i in $(seq 1 $count); do locs=$(head -$i templocs | tail -1); lat=$(echo $locs | awk '{print $1}'); long=$(echo $locs | awk '{print $2}'); grep $lat ../Examples/VCFs/iraptus_meta_full.txt | awk -v coord=$long '$5 == coord' | shuf | head -1; done > iraptus_meta.txt
 cat iraptus_meta.txt  | sed s/"\t"/,/g > iraptus.csv
 ```
 
