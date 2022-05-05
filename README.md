@@ -154,36 +154,35 @@ Simulation programs other than SLiM may be used to make training data, as long a
 ## Vignette: example workflow
 
 ### Custom simulations
-[TODO:
-- realistic map? maybe if you have time
-- independently-derived values for density (small ,for this example)
-- example commands
-]
-
 We will analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km, respectively. With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;. Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
 
-Let's jump into a new working directory and prepare to simulate:
+Let's jump into a new working directory and run the simulations:
 ```
-mkdir -p Temp_wd/TreeSeqs
+mkdir -p Temp_wd
 cd Temp_wd
+mkdir TreeSeqs Targets
 n=100
 for i in {1..100}
 do
-    sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')                               
+    sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
     echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
+    echo TreeSeqs/output_$thing.trees >> tree_list.txt
+    echo $sigma > Targets/output_$thing.target
+    echo Targets/output_$thing.target >> target_list.txt
 done
+parallel -j 2 < sim_commands.txt
 ```
 Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km on average (the census size will fluctuate a bit). 
 
-```
-parallel -j 2 < sim_commands.txt 
-```
+
 
 
 
 ### Training
-- organize slim output
-- hold out some data for testing
+Our training command will be very similar to the above "Training: tree sequences as input". In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
+```
+
+```
 
 ### Testing
 
