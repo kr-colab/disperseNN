@@ -6,7 +6,7 @@
 
 pip install -r requirements.txt 
 ``` 
-1;95;0c
+
 
 ## Overview
 `disperseNN` has two modes: 
@@ -178,7 +178,7 @@ One more step before training: we need to recapitate the tree sequences. Althoug
 ```
 for i in {1..100};
 do
-	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne, random_seed=$i); ts.dump(\"TreeSeqs/output_$i"_"recap.trees\")'" >> recap_commands.txt
+	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne,random_seed=$i); ts.dump(\"TreeSeqs/output_$i"_"recap.trees\")'" >> recap_commands.txt
 	echo TreeSeqs/output_$i"_"recap.trees >> tree_list.txt
 done   
 parallel -j 2 < recap_commands.txt
@@ -196,7 +196,7 @@ head -50 target_list.txt > training_targets.txt
 tail -50 target_list.txt > test_targets.txt
 ```
 
-The training step is computationally intensive and should ideally be run on a computing cluster. The `threads` flag can be altered to use more CPUs for processing tree sequences. Using 20 dedicated threads (and batch size=20), this step should take roughly seven hours; however, if only 1-2 threads are used, the training step will take days.
+The training step is computationally intensive and should ideally be run on a computing cluster. The `threads` flag can be altered to use more CPUs for processing tree sequences. Using 20 dedicated threads (and batch size=20), this step should take several hours; however, if only 1-2 threads are used, the training step will take days.
 
 Our training command will use a similar settings to the above example "Training: tree sequences as input". Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below). We will sample 100x from each from each tree sequence for a total training set of size 5000- this is specified via the `on-the-fly` flag.
 ```

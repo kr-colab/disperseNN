@@ -473,15 +473,15 @@ def unpack_predictions(predictions,meanSig,sdSig,targets,datasets):
             prediction = (predictions[i][0] * sdSig) + meanSig
             error = (trueval-prediction)**2
             squared_errors.append(error)
-            print(datasets[i], np.round(trueval,10), np.round(prediction,10))
-        print("RMSE:", np.mean(squared_errors)**(1/2))
+            print(datasets[i], np.round(np.exp(trueval),10)), np.round(np.exp(prediction),10))
+        print("RMSE in log space:", np.mean(squared_errors)**(1/2))
 
     else:
         prediction = predictions[0]
         prediction = (prediction * sdSig) + meanSig
         prediction = np.exp(prediction)
         prediction = np.round(prediction,10)
-        print(datasets, prediction, "(exponentiated)")
+        print(datasets, prediction)
 
     return
     
