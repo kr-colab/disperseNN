@@ -166,7 +166,6 @@ for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
     echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
-    echo TreeSeqs/output_$i.trees >> tree_list.txt
     echo $sigma > Targets/output_$i.target
     echo Targets/output_$i.target >> target_list.txt
 done
@@ -180,6 +179,7 @@ One more step before training: we need to recapitate the tree sequences. Althoug
 for i in {1..100};
 do
 	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne, random_seed=$i); ts.dump(\"TreeSeqs/output_$i"_"recap.trees\")'" >> recap_commands.txt
+	echo TreeSeqs/output_$i"_"recap.trees >> tree_list.txt
 done   
 parallel -j 2 < recap_commands.txt
 ```
