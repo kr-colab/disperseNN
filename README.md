@@ -204,7 +204,7 @@ Note: we chose to sample away from the habitat edges by 1.5km. This is because t
 ### Testing
 Next, we will validate the trained model using the held-out test data. This command will use a similar set of flags to the above example "Prediction: tree sequences as input".
 ```
-python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out3 --seed 12345 --gpu_num -1 > val_results.txt
+python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out2 --seed 12345 --gpu_num -1 > val_results.txt
 ```
 Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
 
