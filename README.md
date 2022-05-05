@@ -160,13 +160,20 @@ Simulation programs other than SLiM may be used to make tral mnining data, as lo
 - example commands
 ]
 
-Let's analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km. With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;. Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
+We will analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km, respectively. With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;. Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
 
+Let's jump into a new working directory and run some simulations:
 ```
-mkdir Temp_wd
+mkdir Temp_wd/TreeSeqs
 cd Temp_wd
+n=100
+for i in {1..100}
+do
+    sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')                               
+    echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=1000000 -d OUTNAME=\"'Temp_wd/output'\" SLiM_recipes/map12.slim" >> simlist.txt
+done
 ```
-Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise, it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km (on average; because the census size will fluctuate a bit). 
+Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km on average (the census size will fluctuate a bit). 
 
 
 ### Training
