@@ -187,17 +187,52 @@ head -50 target_list.txt > training_targets.txt
 tail -50 target_list.txt > test_targets.txt
 ```
 
-The training step is computationally intensive and should ideally be run on a computing cluster equipped with GPUs. The `threads` flag can be altered to use more CPUs for processing tree sequences, and the `gpu_num` flag can be used to specifiy a GPU index.
+The training step is computationally intensive and should ideally be run on a computing cluster. The `threads` flag can be altered to use more CPUs for processing tree sequences.
 
-Our training command will be very similar to the one under "Training: tree sequences as input", above. In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
+Our training command will use a similar settings to the above example "Training: tree sequences as input". In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
 ```
 python ../disperseNN.py --train --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 10 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_num -1
 ```
 Note: we chose to sample away from the habitat edges by 1.5km. This is because the simulation model we artifically reduces fitness near the edges.
 
+(*currently running into a bug on sesame if using GPU. Will come back to it)
+
+
+
+
+
 ### Testing
+Next, we will validate the trained model using the held-out test data. This command will use a similar set of flags to the above example "Prediction: tree sequences as input".
+```
+python ../disperseNN.py --predict --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out3 --seed 12345 --gpu_num -1 > val_results.txt
+```
+Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
+
+This `val_results.txt file` shows that our &#963; estimates are accurate.
+
+```
+TreeSeqs/output_92.trees -0.0028026921 0.1408058872
+TreeSeqs/output_93.trees -0.3473263223 -0.2757609494
+TreeSeqs/output_94.trees -1.6028874848 -1.863671704
+TreeSeqs/output_95.trees 0.1751299976 -0.0791372587
+TreeSeqs/output_96.trees -0.5800663022 -0.2791748059
+TreeSeqs/output_97.trees 0.3666148056 0.3081696193
+TreeSeqs/output_98.trees -0.5374309538 -0.4900743591
+TreeSeqs/output_99.trees -0.0850628176 -0.0756090524
+TreeSeqs/output_100.trees -1.3386295757 -1.4092516501
+RMSE: 0.22454942093462088
+```
+
+
+
 
 ### VCF prep.
+
+
+
+
+
+
 
 ### Empirical inference
 
@@ -206,4 +241,15 @@ Note: we chose to sample away from the habitat edges by 1.5km. This is because t
 
 
 
-References
+
+
+
+
+
+
+## References:
+
+Battey CJ, Ralph PL, Kern AD. Space is the place: effects of continuous spatial structure on analysis of population genetic data. Genetics. 2020 May 1;215(1):193-214.
+
+
+
