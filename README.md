@@ -179,7 +179,7 @@ One more step before training: we need to recapitate the tree sequences. Althoug
 ```
 for i in {1..100};
 do
-	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne, random_seed=$i); ts.dump(\"output_$i"_"recap.trees\")'" >> recap_commands.txt
+	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne, random_seed=$i); ts.dump(\"TreeSeqs/output_$i"_"recap.trees\")'" >> recap_commands.txt
 done   
 parallel -j 2 < recap_commands.txt
 ```
