@@ -166,9 +166,9 @@ for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
     echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
-    echo TreeSeqs/output_$thing.trees >> tree_list.txt
-    echo $sigma > Targets/output_$thing.target
-    echo Targets/output_$thing.target >> target_list.txt
+    echo TreeSeqs/output_$i.trees >> tree_list.txt
+    echo $sigma > Targets/output_$i.target
+    echo Targets/output_$i.target >> target_list.txt
 done
 parallel -j 2 < sim_commands.txt
 ```
