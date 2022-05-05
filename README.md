@@ -198,7 +198,7 @@ tail -50 target_list.txt > test_targets.txt
 
 The training step is computationally intensive and should ideally be run on a computing cluster. The `threads` flag can be altered to use more CPUs for processing tree sequences.
 
-Our training command will use a similar settings to the above example "Training: tree sequences as input". Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below). We will sample 10x from each from each tree sequence for a total training set of size 1000- this is specified via the `on-the-fly` flag.
+Our training command will use a similar settings to the above example "Training: tree sequences as input". Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below). We will sample 100x from each from each tree sequence for a total training set of size 10000- this is specified via the `on-the-fly` flag.
 ```
 python ../disperseNN.py --train --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 100 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_num -1
 ```
