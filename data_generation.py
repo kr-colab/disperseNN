@@ -6,6 +6,7 @@ import tskit, math
 import time
 import multiprocessing
 import gc
+import warnings
 
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
@@ -40,7 +41,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.preprocessed = preprocessed
         self.on_epoch_end()
         np.random.seed(self.baseseed)
-
+        warnings.simplefilter('ignore', msprime.TimeUnitsMismatchWarning)
+        
     def __len__(self):
         'Denotes the number of batches per epoch'
         return int(np.floor(len(self.list_IDs) / self.batch_size))
