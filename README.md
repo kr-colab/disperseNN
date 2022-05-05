@@ -170,7 +170,7 @@ n=100
 for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')                               
-    echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'Temp_wd/TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
+    echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
 done
 ```
 Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km on average (the census size will fluctuate a bit). 
