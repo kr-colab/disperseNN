@@ -14,9 +14,6 @@ min_lat = min(lat)
 max_lat = max(lat)
 min_long = min(long)
 max_long = max(long)
-mid_long = ((max_long-min_long)/2)+ min_long
-mid_lat = ((max_lat-min_lat)/2)+ min_lat
-midpoint = c(mid_long, mid_lat)
 #print( c(min_lat,max_lat,min_long,max_long ) )
 
 ## quick check to make sure the samples don't span over 180 degress
