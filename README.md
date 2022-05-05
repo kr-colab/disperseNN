@@ -208,8 +208,7 @@ python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome
 ```
 Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
 
-This `val_results.txt file` shows that our &#963; estimates are accurate.
-
+This `val_results.txt` file shows that our estimates are accurate, therefore `disperseNN` was successful at learning to estimate &#963;.
 
     TreeSeqs/output_92.trees -0.0028026921 0.1408058872
     TreeSeqs/output_93.trees -0.3473263223 -0.2757609494
@@ -221,6 +220,8 @@ This `val_results.txt file` shows that our &#963; estimates are accurate.
     TreeSeqs/output_99.trees -0.0850628176 -0.0756090524
     TreeSeqs/output_100.trees -1.3386295757 -1.4092516501
     RMSE: 0.22454942093462088
+
+
 
 
 
@@ -249,6 +250,7 @@ Last, the sample order in the .locs file should correspond to the sample order i
 ```
 count=$(zcat iraptus.vcf.gz | grep -v "##" | grep "#" | wc -w)
 for i in $(seq 10 $count); do id=$(zcat iraptus.vcf.gz | grep -v "##" | grep "#" | cut -f $i); grep -w $id iraptus.csv; done | cut -d "," -f 4,5 | sed s/","/"\t"/g > iraptus.locs
+gunzip iraptus.vcf.gz
 ```
 
 
@@ -258,10 +260,11 @@ for i in $(seq 10 $count); do id=$(zcat iraptus.vcf.gz | grep -v "##" | grep "#"
 
 ### Empirical inference
 Finally, our command for predicting &#963; from the subsetted VCF:
-```
 
 ```
-
+python ../disperseNN.py --predict --empirical iraptus --min_n 14 --max_n 14 --num_snps 1000 --phase 1 --polarize 2 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 100 --out out2 --seed 12345 --gpu_num -1
+```
+Note: `num_pred`, here, specifies how many bootstrap replicates to perform, that is how many replicate draws of 1000 SNPs.
 
 
 
