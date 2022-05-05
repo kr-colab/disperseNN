@@ -187,10 +187,12 @@ head -50 target_list.txt > training_targets.txt
 tail -50 target_list.txt > test_targets.txt
 ```
 
+The training step is computationally intensive and should ideally be run on a computing cluster equipped with GPUs. The `threads` flag can be altered to use more CPUs for processing tree sequences, and the `gpu_num` flag can be used to specifiy a GPU index.
 
-Our training command will be very similar to the above "Training: tree sequences as input". In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
+Our training command will be very similar to the one under "Training: tree sequences as input", above. In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
 ```
-python ../disperseNN.py --train --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 10 --batch_size 20 --threads 1 --max_epochs 100 --validation_split 0.2 --out out1 --seed 12345
+python ../disperseNN.py --train --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_l
+ist training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 10 --batch_size 20 --threads 20 --max_epochs 100 --validation_split 0.2 --out out1 --seed 12345 --gpu_num 1
 ```
 Note: we chose to sample away from the habitat edges by 1.5km. This is because the simulation model we artifically reduces fitness near the edges.
 

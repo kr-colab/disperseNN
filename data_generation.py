@@ -101,7 +101,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             ts = ts.simplify() # removes the empty population
             demog = msprime.Demography()                                
             demog.add_population(name="p1",initial_size=N)             
-            recap = msprime.sim_ancestry(                               
+            ts = msprime.sim_ancestry(                               
                 initial_state=ts,                                       
                 demography=demog,                                       
                 recombination_rate=self.rho,                                
