@@ -189,9 +189,9 @@ tail -50 target_list.txt > test_targets.txt
 
 The training step is computationally intensive and should ideally be run on a computing cluster. The `threads` flag can be altered to use more CPUs for processing tree sequences.
 
-Our training command will use a similar settings to the above example "Training: tree sequences as input". In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. We will sample 10x from each from each tree sequences, for a total training set of size 1000- this is specified via the `on-the-fly` flag.
+Our training command will use a similar settings to the above example "Training: tree sequences as input". In particular, we still need to recapitate the fresh tree sequences, so the `recapitate` flag will be set to True. The min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below). We will sample 10x from each from each tree sequence for a total training set of size 1000- this is specified via the `on-the-fly` flag.
 ```
-python ../disperseNN.py --train --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 10 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_num -1
+python ../disperseNN.py --train --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 10 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_num -1
 ```
 Note: we chose to sample away from the habitat edges by 1.5km. This is because the simulation model we artifically reduces fitness near the edges.
 
@@ -204,7 +204,7 @@ Note: we chose to sample away from the habitat edges by 1.5km. This is because t
 ### Testing
 Next, we will validate the trained model using the held-out test data. This command will use a similar set of flags to the above example "Prediction: tree sequences as input".
 ```
-python ../disperseNN.py --predict --min_n 25 --max_n 25 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out3 --seed 12345 --gpu_num -1 > val_results.txt
+python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate True --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out3 --seed 12345 --gpu_num -1 > val_results.txt
 ```
 Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
 
@@ -227,7 +227,29 @@ This `val_results.txt file` shows that our &#963; estimates are accurate.
 
 
 ### VCF prep.
+Now it's time to prepare our empirical VCF for inference with `disperseNN`. This means taking a subset of individuals that we want to analyze, and other basic filters, e.g. removing indels and non-variants sites. Separately, we want a .locs file with the same prefix as the .vcf.
 
+In our case we want to take a subset of individuals from a particular geographic region, the Scotian Shelf region. Further, we want to include only a single individual per sampling location; this is important because individuals did not have overlapping locations in the training simulations, which might trip up the neural network. Last, because we have the option, let's include only female samples. Below are some example commands that might be used to parse the metadata, but these steps will certainly be different for other empirical tables.
+
+```
+# [these commands are gross; but I want to eventually switch over to simulated data, so these steps will change]
+cat ../Examples/VCFs/iraptus_meta_full.txt | grep "Scotian Shelf - East" | cut -f 4,5 | sort | uniq > templocs
+count=$(wc -l templocs | awk '{print $1}')
+for i in $(seq 1 $count); do locs=$(head -$i templocs | tail -1); lat=$(echo $locs | awk '{print $1}'); long=$(echo $locs | awk '{print $2}'); grep $lat ../Examples/VCFs/iraptus_meta_full.txt | awk -v coord=$long '$5 == coord' | awk '$2 == "F"' | shuf | head -1; done > iraptus_meta.txt
+cat iraptus_meta.txt  | sed s/"\t"/,/g > iraptus.csv
+```
+
+We provide a simple python script for subsetting a VCF for a particular set of individuals, which also filters indels and non-variant sites.
+```
+python ../Empirical/subset_vcf.py ../Examples/VCFs/iraptus_full.vcf.gz iraptus.csv iraptus.vcf 0 1
+```
+
+
+Last, the sample order in the .locs file should correspond to the sample order in the VCF:
+```
+count=$(zcat iraptus.vcf.gz | grep -v "##" | grep "#" | wc -w)
+for i in $(seq 10 $count); do id=$(zcat iraptus.vcf.gz | grep -v "##" | grep "#" | cut -f $i); grep -w $id iraptus.csv; done | cut -d "," -f 4,5 | sed s/","/"\t"/g > iraptus.locs
+```
 
 
 
@@ -235,6 +257,10 @@ This `val_results.txt file` shows that our &#963; estimates are accurate.
 
 
 ### Empirical inference
+Finally, our command for predicting &#963; from the subsetted VCF:
+```
+
+```
 
 
 
