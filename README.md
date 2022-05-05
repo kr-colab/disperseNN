@@ -144,7 +144,7 @@ slim -d SEED=12345 -d sigma=0.2 -d K=5 -d mu=0 -d r=1e-8 -d W=25 -d G=1e8 -d max
        # Note the two sets of quotes around the output name
 ```
 
-Simulation programs other than SLiM may be used to make tral mnining data, as long as the output is processed into tensors of the necessary shape. 
+Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
 
 
 
