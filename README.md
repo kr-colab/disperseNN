@@ -164,7 +164,7 @@ We will analyze a theoretical population of *Internecivus raptus*. Let's assume 
 
 Let's jump into a new working directory and run some simulations:
 ```
-mkdir Temp_wd/TreeSeqs
+mkdir -p Temp_wd/TreeSeqs
 cd Temp_wd
 n=100
 for i in {1..100}
