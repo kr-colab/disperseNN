@@ -210,18 +210,18 @@ Note: here we handed `disperseNN` a list of paths to the targets from training; 
 
 This `val_results.txt file` shows that our &#963; estimates are accurate.
 
-```
-TreeSeqs/output_92.trees -0.0028026921 0.1408058872
-TreeSeqs/output_93.trees -0.3473263223 -0.2757609494
-TreeSeqs/output_94.trees -1.6028874848 -1.863671704
-TreeSeqs/output_95.trees 0.1751299976 -0.0791372587
-TreeSeqs/output_96.trees -0.5800663022 -0.2791748059
-TreeSeqs/output_97.trees 0.3666148056 0.3081696193
-TreeSeqs/output_98.trees -0.5374309538 -0.4900743591
-TreeSeqs/output_99.trees -0.0850628176 -0.0756090524
-TreeSeqs/output_100.trees -1.3386295757 -1.4092516501
-RMSE: 0.22454942093462088
-```
+
+    TreeSeqs/output_92.trees -0.0028026921 0.1408058872
+    TreeSeqs/output_93.trees -0.3473263223 -0.2757609494
+    TreeSeqs/output_94.trees -1.6028874848 -1.863671704
+    TreeSeqs/output_95.trees 0.1751299976 -0.0791372587
+    TreeSeqs/output_96.trees -0.5800663022 -0.2791748059
+    TreeSeqs/output_97.trees 0.3666148056 0.3081696193
+    TreeSeqs/output_98.trees -0.5374309538 -0.4900743591
+    TreeSeqs/output_99.trees -0.0850628176 -0.0756090524
+    TreeSeqs/output_100.trees -1.3386295757 -1.4092516501
+    RMSE: 0.22454942093462088
+
 
 
 
