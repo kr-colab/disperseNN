@@ -175,6 +175,15 @@ parallel -j 2 < sim_commands.txt
 Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km on average (the census size will fluctuate a bit). 
 
 
+One more step before training: we need to recapitate the tree sequences. Although `disperseNN` has an option to recaptitate during training, it'll save us time in the long run if we recapitate up front.
+```
+for i in {1..100};
+do
+	echo "python -c 'import tskit,pyslim; ts=pyslim.load(\"output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne, random_seed=$i); ts.dump(\"output_$i"_"recap.trees\")'" >> recap_commands.txt
+done   
+parallel -j 2 < recap_commands.txt
+```
+
 
 
 

@@ -84,8 +84,6 @@ class DataGenerator(tf.keras.utils.Sequence):
     def sample_ts(self, filepath, W, edge_width, seed):
         sys.stderr.flush()
 
-# ********** WARNING: don't change anything here without matching add_mutations_v2.py *************** 
-
         # read input
         #print(filepath)
         sys.stdout.flush()
