@@ -96,8 +96,20 @@ class DataGenerator(tf.keras.utils.Sequence):
             alive_inds.append(i.id)
         if self.recapitate == "True":
             N = len(alive_inds)
-            ts = ts.recapitate(recombination_rate=self.rho, Ne=N, random_seed=seed)
+            #ts = ts.recapitate(recombination_rate=self.rho, Ne=N, random_seed=seed) # old command
+            ######### new recap block: my trees have 2 populations... maybe the slim version is incompatible or something
+            ts = ts.simplify() # removes the empty population
+            demog = msprime.Demography()                                
+            demog.add_population(name="p1",initial_size=N)             
+            recap = msprime.sim_ancestry(                               
+                initial_state=ts,                                       
+                demography=demog,                                       
+                recombination_rate=self.rho,                                
+                start_time=ts.metadata["SLiM"]["generation"],           
+            )                                                           
+            ##########
 
+            
         # crop map
         if self.sampling_width != None:
             sample_width = (float(self.sampling_width)*W)-(edge_width*2)
