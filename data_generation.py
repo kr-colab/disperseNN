@@ -277,7 +277,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         geno_mat0 = ts.genotype_matrix()
         pos_list0 = ts.tables.sites.position
 
-        # change 0,1 encoding to major/minor allele  ####################### new code block: could use a careful look-over please
+        # change 0,1 encoding to major/minor allele  
         if self.polarize == 2:
             shuffled_indices = np.arange(ts.num_sites)
             np.random.shuffle(shuffled_indices) 
@@ -297,22 +297,23 @@ class DataGenerator(tf.keras.utils.Sequence):
                     geno_mat1.append(new_genotypes)
                     snp_index_map[shuffled_indices[s]] = int(snp_counter)
                     snp_counter += 1
-            geno_mat0 = [] # (replacing previous geno_mat0)
-            pos_list = []
+            geno_mat0 = [] 
+            pos_list1 = []
             sorted_indices = list(snp_index_map) 
-            sorted_indices.sort() # re-sorting the retained snps  
+            sorted_indices.sort() 
             for snp in range(self.num_snps):
                 #print("current snp iteration:", snp, "\tindex from ts.genotype_matrix:", sorted_indices[snp], "\tindex in our filtered geno_mat", snp_index_map[sorted_indices[snp]])
                 geno_mat0.append(geno_mat1[snp_index_map[sorted_indices[snp]]])
-                pos_list.append(pos_list0[sorted_indices[snp]]) # (doesn't need map)
-        ########################################################################################
+                pos_list1.append(pos_list0[sorted_indices[snp]]) # (doesn't need map)
+            geno_mat0 = np.array(geno_mat0)
+            pos_list1 = np.array(pos_list1)
                                                 
         # sample SNPs
         else:
-            mask = [True] * self.num_snps + [False] * (geno_mat0.shape[0] - self.num_snps)
+            mask = [True] * self.num_snps + [False] * (ts.num_sites - self.num_snps)
             np.random.shuffle(mask)
             geno_mat0 = geno_mat0[mask, :]
-            pos_list = pos_list0[mask]
+            pos_list1 = pos_list0[mask] # (new variable, to stay consistent with above if-block)
 
         # collapse genotypes, change to allele dosage (e.g. 0,1,2)
         if self.phase == 1:
@@ -320,24 +321,16 @@ class DataGenerator(tf.keras.utils.Sequence):
             for ind in range(n):
                 geno_mat1[:, ind] += geno_mat0[:, ind * 2]
                 geno_mat1[:, ind] += geno_mat0[:, ind * 2 + 1]
-            geno_mat0 = np.array(geno_mat1)
-
+            geno_mat0 = np.array(geno_mat1) # (change variable name)
+            
         # shove the retained snps into padded genotype matrix
-        geno_mat = np.zeros((self.num_snps, self.max_n * self.phase))
-        geno_mat[:, 0 : n * self.phase] = geno_mat0
+        geno_mat1 = np.zeros((self.num_snps, self.max_n * self.phase))
+        geno_mat1[:, 0 : n * self.phase] = geno_mat0
 
         # rescale genomic positions by genome length
-        pos_list = pos_list / self.genome_length
+        pos_list1 = pos_list1 / self.genome_length
 
-        del ts
-        del geno_mat0
-        # del geno_mat
-        del mask
-        del alive_inds
-        del sampled_inds
-        gc.collect()
-
-        return geno_mat, pos_list, locs, sample_width
+        return geno_mat1, pos_list1, locs, sample_width
 
     def preprocess_sample_ts(self, geno_path, pos_path, loc_path):
         "Seperate function for loading in pre-processed data"
@@ -411,5 +404,4 @@ class DataGenerator(tf.keras.utils.Sequence):
                 X3[i, :] = batch[i][2][0]
             X = [X1, X2, X3, X4]
 
-        gc.collect()
         return (X, y)
