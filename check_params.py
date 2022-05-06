@@ -30,10 +30,12 @@ def check_params(args):
                     "\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
                 )
                 exit()
-
-    # avoiding information leakage through W and S parameters
+    if args.empirical == None and args.preprocessed == False:
+        if args.edge_width == None:
+            print("need to specify edge_width")
+            exit()
     if (
-        args.edge_width == None
+        args.edge_width == 'sigma'
         and args.sampling_width != None
         and args.map_width != None
     ):
@@ -41,7 +43,7 @@ def check_params(args):
             "\n\nIf W and S are fixed, you must also fix the edge_width; otherwise the CNN can see sigma directly in the fourth input\n\n"
         )
         exit()
-
+                
     # check that mean and sd are provided in exactly one form
     count_training_inputs = 0
     if args.train == True:

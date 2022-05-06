@@ -41,9 +41,9 @@ parser.add_argument("--tree_list", help="list of tree filepaths.", default=None)
 parser.add_argument("--width_list", help="list of map widths.", default=None)
 parser.add_argument(
     "--edge_width",
-    help="crop a fixed edge width for each map",
+    help="crop a fixed width from each edge of the map; enter 'sigma' to set edge_width equal to sigma ",
     default=None,
-    type=float,
+    type=str,
 )
 parser.add_argument("--map_width", help="the whole habitat", default=None, type=float)
 parser.add_argument(
@@ -318,24 +318,20 @@ def make_generator_params_dict(
 
 
 def prep_trees_and_train():
-    # read targets
-    targets = read_single_value(args.target_list)
+    # read targets, save edges
+    targets = read_single_value(args.target_list)    
+    targets = np.log(targets)
     total_sims = len(targets)
-    edges = {}
-    for i in range(total_sims):
-        if args.edge_width == None:
-            edges[i] = float(targets[i])  # want raw sigma value for cropping edges away
-        else:
-            edges[i] = float(args.edge_width)
-        targets[i] = np.log(targets[i])
-
+    if args.edge_width == 'sigma':
+        edges = read_single_value_dict(args.target_list)
+    else:
+        edges = fill_dict_single_value(float(args.edge_width),total_sims)
+        
     # normalize maps
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
-    target_dict = {}
-    for i in range(total_sims):  # attaching targets to training data
-        target_dict[i] = targets[i]
+    targets = dict_from_list(targets)
 
     # tree sequences
     trees = read_dict(args.tree_list)
@@ -344,9 +340,7 @@ def prep_trees_and_train():
     if args.width_list != None:  # list of widths
         widths = read_single_value_dict(args.width_list)
     else:
-        widths = {}
-        for i in range(total_sims):
-            widths[i] = float(args.map_width)
+        widths = fill_dict_single_value(args.map_width,total_sims)
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
@@ -369,7 +363,7 @@ def prep_trees_and_train():
 
     # initialize generators
     params = make_generator_params_dict(
-        target_dict,
+        targets,
         trees=trees,
         widths=widths,
         edges=edges,
@@ -399,33 +393,29 @@ def prep_trees_and_train():
 
 
 def prep_preprocessed_and_train():
-    # read targets
-    print("loading input data; this could take a while if the lists are long")
+    # read targets, save edges
+    print("loading input data; this could take a while if the lists are very long")
     targets = read_single_value(args.target_list)
+    targets = np.log(targets)
     total_sims = len(targets)
-    edges = {}
-    for i in range(total_sims):
-        if args.edge_width == None:
-            edges[i] = float(targets[i])  # want raw sigma value for cropping edges away
-        else:
-            edges[i] = float(args.edge_width)
-        targets[i] = np.log(targets[i])
+    if args.edge_width == 'sigma':
+        edges = read_single_value_dict(args.target_list)
+    else:
+        edges = fill_dict_single_value(float(args.edge_width),total_sims)
 
-    # normalize maps
+    # normalize maps                                                              
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
-    target_dict = {}
-    for i in range(total_sims):  # attaching targets to training data
-        target_dict[i] = targets[i]
-
+    targets = dict_from_list(targets)
+        
     # other inputs
     sample_widths = load_single_value_dict(args.samplewidth_list)
     genos = read_dict(args.geno_list)
     locs = read_dict(args.loc_list)
     pos = read_dict(args.pos_list)
 
-    # split into pred,val,train sets
+    # split into val,train sets
     sim_ids = np.arange(0, total_sims)
     val = np.random.choice(
         sim_ids, round(args.validation_split * total_sims), replace=False
@@ -439,7 +429,7 @@ def prep_preprocessed_and_train():
 
     # initialize generators
     params = make_generator_params_dict(
-        target_dict,
+        targets,
         trees=None,
         widths=None,
         edges=None,
@@ -500,7 +490,6 @@ def prep_empirical_and_pred(meanSig, sdSig):
 def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
 
     # load inputs
-    print("reading inputs: this can take a while if the lists are long")
     genos = read_dict(args.geno_list)
     datasets = np.array(read_list(args.geno_list))  # (filenames for output)
     poss = read_dict(args.pos_list)
@@ -532,14 +521,13 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
 
 def prep_preprocessed_and_pred(meanSig, sdSig):
     # load inputs
-    print("reading inputs: this can take a while if the lists are long")
     genos = read_dict(args.geno_list)
     poss = read_dict(args.pos_list)
     locs = read_dict(args.loc_list)
     sample_widths = load_single_value_dict(args.samplewidth_list)
-    targets = read_single_value_dict(args.target_list)
-    for i in range(len(targets)):
-        targets[i] = np.log(targets[i])
+    targets = read_single_value(args.target_list)
+    targets = np.log(targets)
+    targets = dict_from_list(targets)
 
     # organize "partition" to hand to data generator
     partition = {}
@@ -571,24 +559,30 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
 
 
 def prep_trees_and_pred(meanSig, sdSig):
-    # read inputs (note these are lists instead of dict.)
-    trees = read_dict(args.tree_list)
+    # read targets, save edges                                                     
     targets = read_single_value(args.target_list)
+    targets = np.log(targets)
     total_sims = len(targets)
-    edges = {}
-    for i in range(total_sims):
-        if args.edge_width == None:
-            edges[i] = float(targets[i])  # want raw sigma value for cropping edges away
-        else:
-            edges[i] = float(args.edge_width)
-        targets[i] = np.log(targets[i])
-    if args.width_list != None:  # list of widths
+    if args.edge_width == 'sigma':
+        edges = read_single_value_dict(args.target_list)
+    else:
+        edges = fill_dict_single_value(float(args.edge_width),total_sims)
+
+    # normalize maps                                                               
+    meanSig = np.mean(targets)
+    sdSig = np.std(targets)
+    targets = [(x - meanSig) / sdSig for x in targets]  # center and scale         
+    targets = dict_from_list(targets)
+
+    # tree sequences                                                
+    trees = read_dict(args.tree_list)
+
+    # map widths                                                    
+    if args.width_list != None:  # list of widths                   
         widths = read_single_value_dict(args.width_list)
     else:
-        widths = {}
-        for i in range(total_sims):
-            widths[i] = float(args.map_width)
-
+        widths = fill_dict_single_value(args.map_width,total_sims)    
+    
     # organize "partition" to hand to data generator
     partition = {}
     if (args.num_pred) % args.batch_size != 0:

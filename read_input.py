@@ -11,7 +11,6 @@ def read_list(path):
             collection.append(newline)
     return collection
 
-
 # reads a list of filepaths, stores in dict
 def read_dict(path):
     collection, counter = {}, 0
@@ -22,7 +21,6 @@ def read_dict(path):
             counter += 1
     return collection
 
-
 # reads a list of floats, stores in list
 def read_single_value(path):
     collection = []
@@ -32,7 +30,6 @@ def read_single_value(path):
                 newline = float(individual_file.readline().strip())
                 collection.append(newline)
     return collection
-
 
 # reads a list of floats, stores in dict
 def read_single_value_dict(path):
@@ -45,7 +42,6 @@ def read_single_value_dict(path):
                 counter += 1
     return collection
 
-
 # numpy-load list of floats, store as list
 def load_single_value(path):
     collection = []
@@ -54,7 +50,6 @@ def load_single_value(path):
             newline = np.load(line.strip())
             collection.append(newline)
     return collection
-
 
 # numpy-load list of floats, store as dict
 def load_single_value_dict(path):
@@ -66,7 +61,6 @@ def load_single_value_dict(path):
             counter += 1
     return collection
 
-
 # read table of lat+long coords, store in list
 def read_locs(path):
     collection = []
@@ -76,3 +70,19 @@ def read_locs(path):
             newline = line.strip().split()
             collection.append(newline)
     return collection
+
+# fill a dictionary with a single value
+def fill_dict_single_value(val, reps):
+    collection={}
+    for i in range(reps):
+        collection[i] = val
+    return collection
+
+# convert list to dictionary with ordinal keys
+def dict_from_list(mylist):
+    collection = {}
+    for i in range(len(mylist)):
+        collection[i] = mylist[i]
+    return collection
+
+
