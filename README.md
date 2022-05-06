@@ -192,17 +192,19 @@ python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome
 Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
 
 This `val_results.txt` file shows that our estimates are accurate, therefore `disperseNN` was successful at learning to estimate &#963;.
+```
+TreeSeqs/output_93_recap.trees 0.7065747195 1.0331190445
+TreeSeqs/output_94_recap.trees 0.2013143857 0.2030430197
+TreeSeqs/output_95_recap.trees 1.1914010858 1.1188061793
+TreeSeqs/output_96_recap.trees 0.5598612453 0.7142859062
+TreeSeqs/output_97_recap.trees 1.4428420374 0.7139526873
+TreeSeqs/output_98_recap.trees 0.5842472843 0.593893058
+TreeSeqs/output_99_recap.trees 0.9184545874 0.6911014651
+TreeSeqs/output_100_recap.trees 0.2622047542 0.2629951186
+RMSLE: 0.3172221601286179
+RMSE: 0.29222109958735537
+```
 
-    TreeSeqs/output_92.trees -0.0028026921 0.1408058872
-    TreeSeqs/output_93.trees -0.3473263223 -0.2757609494
-    TreeSeqs/output_94.trees -1.6028874848 -1.863671704
-    TreeSeqs/output_95.trees 0.1751299976 -0.0791372587
-    TreeSeqs/output_96.trees -0.5800663022 -0.2791748059
-    TreeSeqs/output_97.trees 0.3666148056 0.3081696193
-    TreeSeqs/output_98.trees -0.5374309538 -0.4900743591
-    TreeSeqs/output_99.trees -0.0850628176 -0.0756090524
-    TreeSeqs/output_100.trees -1.3386295757 -1.4092516501
-    RMSE: 0.22454942093462088
 
 
 
