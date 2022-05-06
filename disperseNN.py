@@ -199,7 +199,7 @@ def make_generator_params_dict(targets,trees,widths,edges,shuffle,genos,poss,loc
 
 def prep_trees_and_train():
     # read targets
-    targets = read_single_value(args.target_list)
+    targets = read_single_value(args.target_list) 
     total_sims = len(targets)
     edges = {}
     for i in range(total_sims):    
@@ -281,7 +281,7 @@ def prep_trees_and_train():
 def prep_preprocessed_and_train():
     # read targets                
     print("loading input data; this could take a while if the lists are long")
-    targets = read_single_value(args.target_list)
+    targets = read_single_value(args.target_list) 
     total_sims = len(targets)
     edges = {}
     for i in range(total_sims):
@@ -449,17 +449,22 @@ def prep_preprocessed_and_pred(meanSig,sdSig):
 
 def prep_trees_and_pred(meanSig,sdSig):
     # read inputs (note these are lists instead of dict.)
-    trees = read_list(args.tree_list) 
+    trees = read_dict(args.tree_list)    
     targets = read_single_value(args.target_list)
     total_sims = len(targets)
-    edges = list(targets) # setting edge width to sigma
-    targets = np.log(targets) 
+    edges = {}
+    for i in range(total_sims):
+        if args.edge_width == None:
+            edges[i] = float(targets[i]) # want raw sigma value for cropping edges away                                                                                                                  
+        else:
+            edges[i] = float(args.edge_width)
+        targets[i] = np.log(targets[i])
     if args.width_list != None: # list of widths         
-        widths = read_single_value(args.width_list)
+        widths = read_single_value_dict(args.width_list)
     else:
-        widths = []
+        widths = {}
         for i in range(total_sims):
-            widths.append(args.map_width)
+            widths[i]=float(args.map_width)
 
     # organize "partition" to hand to data generator                                                                                     
     partition = {}
@@ -497,10 +502,7 @@ def unpack_predictions(predictions,meanSig,sdSig,targets,datasets):
         
     if args.empirical == None:
         for i in range(len(predictions)):
-            if args.preprocessed == False:
-                trueval = targets[i]         
-            else:
-                trueval = targets[datasets[i]]
+            trueval = targets[i]
             prediction = (predictions[i][0] * sdSig) + meanSig
             error = (trueval-prediction)**2
             squared_errors.append(error)
