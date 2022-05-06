@@ -11,15 +11,17 @@ def read_list(path):
             collection.append(newline)
     return collection
 
+
 # reads a list of filepaths, stores in dict
 def read_dict(path):
-    collection,counter = {},0
+    collection, counter = {}, 0
     with open(path) as infile:
         for line in infile:
             newline = line.strip()
             collection[counter] = newline
             counter += 1
     return collection
+
 
 # reads a list of floats, stores in list
 def read_single_value(path):
@@ -31,9 +33,10 @@ def read_single_value(path):
                 collection.append(newline)
     return collection
 
+
 # reads a list of floats, stores in dict
 def read_single_value_dict(path):
-    collection,counter = {},0
+    collection, counter = {}, 0
     with open(path) as infile:
         for line in infile:
             with open(line.strip()) as individual_file:
@@ -41,6 +44,7 @@ def read_single_value_dict(path):
                 collection[counter] = newline
                 counter += 1
     return collection
+
 
 # numpy-load list of floats, store as list
 def load_single_value(path):
@@ -51,9 +55,10 @@ def load_single_value(path):
             collection.append(newline)
     return collection
 
+
 # numpy-load list of floats, store as dict
 def load_single_value_dict(path):
-    collection,counter = {},0
+    collection, counter = {}, 0
     with open(path) as infile:
         for line in infile:
             newline = np.load(line.strip())
@@ -61,13 +66,13 @@ def load_single_value_dict(path):
             counter += 1
     return collection
 
+
 # read table of lat+long coords, store in list
 def read_locs(path):
     collection = []
     with open(path) as infile:
         for line in infile:
-            #newline = map(float,line.strip().split())
+            # newline = map(float,line.strip().split())
             newline = line.strip().split()
             collection.append(newline)
     return collection
-
