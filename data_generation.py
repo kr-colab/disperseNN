@@ -4,7 +4,9 @@ import sys
 import numpy as np
 import tensorflow as tf
 import msprime
-import tskit, math
+import tskit
+import math
+import pyslim
 import time
 import multiprocessing
 import gc
@@ -98,19 +100,11 @@ class DataGenerator(tf.keras.utils.Sequence):
             alive_inds.append(i.id)
         if self.recapitate == "True":
             N = len(alive_inds)
-            #ts = ts.recapitate(recombination_rate=self.rho, Ne=N, random_seed=seed) # old command
-            ######### new recap block: my trees have 2 populations... maybe the slim version is incompatible or something
-            ts = ts.simplify() # removes the empty population
-            demog = msprime.Demography()                                
-            demog.add_population(name="p1",initial_size=N)             
-            ts = msprime.sim_ancestry(                               
-                initial_state=ts,                                       
-                demography=demog,                                       
-                recombination_rate=self.rho,                                
-                start_time=ts.metadata["SLiM"]["generation"],           
-            )                                                           
-            ##########
-
+            #ts = ts.recapitate(recombination_rate=self.rho, Ne=N, random_seed=seed) 
+            ts = pyslim.recapitate(ts,
+                                   recombination_rate=self.rho,
+                                   ancestral_Ne=N,
+                                   random_seed=seed) 
             
         # crop map
         if self.sampling_width != None:
