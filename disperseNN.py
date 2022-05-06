@@ -197,7 +197,7 @@ def make_generator_params_dict(targets,trees,widths,edges,shuffle,genos,poss,loc
 
 
 
-def prep_trees_for_train():
+def prep_trees_and_train():
     # read targets
     targets = read_single_value(args.target_list)
     total_sims = len(targets)
@@ -278,7 +278,7 @@ def prep_trees_for_train():
 
 
 
-def prep_preprocessed_for_train():
+def prep_preprocessed_and_train():
     # read targets                
     print("loading input data; this could take a while if the lists are long")
     targets = read_single_value(args.target_list)
@@ -345,7 +345,7 @@ def prep_preprocessed_for_train():
 
 
 
-def prep_empirical(meanSig,sdSig):
+def prep_empirical_and_pred(meanSig,sdSig):
     # convert locs                                                                                        
     locs = read_locs(args.empirical+".locs")
     locs = project_locs(locs,args.out,args.seed)
@@ -373,7 +373,7 @@ def prep_empirical(meanSig,sdSig):
 
 
 
-def prep_empirical_preprocessed(meanSig,sdSig):
+def prep_empirical_preprocessed_and_pred(meanSig,sdSig):
 
     # load inputs
     print("reading inputs: this can take a while if the lists are long")
@@ -405,7 +405,7 @@ def prep_empirical_preprocessed(meanSig,sdSig):
 
 
 
-def prep_preprocessed_for_pred(meanSig,sdSig):
+def prep_preprocessed_and_pred(meanSig,sdSig):
     # load inputs                                                                          
     print("reading inputs: this can take a while if the lists are long")
     genos = read_dict(args.geno_list)
@@ -447,7 +447,7 @@ def prep_preprocessed_for_pred(meanSig,sdSig):
 
 
 
-def prep_trees_for_pred(meanSig,sdSig):
+def prep_trees_and_pred(meanSig,sdSig):
     # read inputs (note these are lists instead of dict.)
     trees = read_list(args.tree_list) 
     targets = read_single_value(args.target_list)
@@ -530,10 +530,10 @@ if args.train == True:
     # prep input and initialize generators
     if args.preprocessed == False:
         print("using tree sequences")
-        prep_trees_for_train()
+        prep_trees_and_train()
     else:        
         print("using pre-processed tensors")
-        prep_preprocessed_for_train()
+        prep_preprocessed_and_train()
 
 # predict        
 if args.predict == True:
@@ -554,18 +554,18 @@ if args.predict == True:
         print("predicting on simulated data")
         if args.preprocessed == True:
             print("using pre-processed tensors")
-            prep_preprocessed_for_pred(meanSig,sdSig)
+            prep_preprocessed_and_pred(meanSig,sdSig)
         else:
             print("using tree sequences")
-            prep_trees_for_pred(meanSig,sdSig)
+            prep_trees_and_pred(meanSig,sdSig)
     else:
         print("predicting on empirical data")
         if args.preprocessed == True:
             print("using pre-processed tensors")
-            prep_empirical_preprocessed(meanSig,sdSig)
+            prep_empirical_preprocessed_and_pred(meanSig,sdSig)
         else:
             print("using a single VCF")
-            prep_empirical(meanSig,sdSig)
+            prep_empirical_and_pred(meanSig,sdSig)
 
 
 
