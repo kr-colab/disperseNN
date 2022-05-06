@@ -162,7 +162,7 @@ def load_network():
 
 
 
-def generator_params(targets,trees,widths,edges,shuffle,genos,poss,locs,sample_widths):
+def make_generator_params_dict(targets,trees,widths,edges,shuffle,genos,poss,locs,sample_widths):
     params = {'targets': targets,
               'trees': trees,
               'num_snps': args.num_snps,
@@ -228,7 +228,7 @@ def prep_trees_for_train():
         for i in range(total_sims):
             widths[i] = float(args.map_width)        
 
-    # split into pred,val,train sets    
+    # split into val,train sets    
     sim_ids = np.arange(0,total_sims)
     val=np.random.choice(sim_ids, round(args.validation_split*total_sims), replace=False)
     train=np.array([x for x in sim_ids if x not in val])
@@ -249,7 +249,15 @@ def prep_trees_for_train():
             partition['validation'].append(i)
 
     # initialize generators
-    params = generator_params(target_dict,trees,widths,edges,True,None,None,None,None)
+    params = make_generator_params_dict(target_dict,
+                                        trees=trees,
+                                        widths=widths,
+                                        edges=edges,
+                                        shuffle=True,
+                                        genos=None,
+                                        poss=None,
+                                        locs=None,
+                                        sample_widths=None)
     training_generator = DataGenerator(partition['train'], **params) 
     validation_generator = DataGenerator(partition['validation'], **params)
 
@@ -308,7 +316,15 @@ def prep_preprocessed_for_train():
     partition['validation'] = list(val)
 
     # initialize generators                                                                                           
-    params = generator_params(target_dict,None,None,None,True,genos,pos,locs,sample_widths)
+    params = make_generator_params_dict(target_dict,
+                                        trees=None,
+                                        widths=None,
+                                        edges=None,
+                                        shuffle=True,
+                                        genos=genos,
+                                        pos=pos,
+                                        locs=locs,
+                                        sample_widths=sample_widths)
     training_generator = DataGenerator(partition['train'], **params)
     validation_generator = DataGenerator(partition['validation'], **params)
 
@@ -406,7 +422,15 @@ def prep_preprocessed_for_pred(meanSig,sdSig):
     partition['prediction'] = simids
 
     # get generator ready                                                                  
-    params = generator_params(targets,None,None,None,False,genos,poss,locs,sample_widths)
+    params = make_generator_params_dict(targets,
+                                        trees=None,
+                                        widths=None,
+                                        edges=None,
+                                        shuffle=False,
+                                        genos=genos,
+                                        poss=poss,
+                                        locs=locs,
+                                        sample_widths=sample_widths)
     generator = DataGenerator(partition['prediction'], **params)
 
     # predict                                                                              
@@ -445,7 +469,15 @@ def prep_trees_for_pred(meanSig,sdSig):
     partition['prediction'] = np.arange(0,args.num_pred)
 
     # get generator ready
-    params = generator_params(targets,trees,widths,edges,False,None,None,None,None) 
+    params = make_generator_params_dict(targets,
+                                        trees=trees,
+                                        widths=widths,
+                                        edges=edges,
+                                        shuffle=False,
+                                        genos=None,
+                                        poss=None,
+                                        locs=None,
+                                        sample_widths=None) 
     generator = DataGenerator(partition['prediction'], **params)
     
     # predict
