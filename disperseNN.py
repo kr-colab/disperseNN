@@ -6,7 +6,6 @@ from check_params import *
 from read_input import *
 from process_input import *
 from data_generation import DataGenerator
-
 def load_modules():
     print("loading bigger modules")
 # *** need to check if these are all needed
@@ -47,7 +46,7 @@ parser.add_argument('--mutate',type=str, help="add mutations on-the-fly; True or
 parser.add_argument("--crop",default=None,type=float, help="map-crop size")
 parser.add_argument("--out",help="file name stem for output",default=None, required=True)
 parser.add_argument("--seed",default=None,type=int, help="random seed.")
-parser.add_argument("--gpu_number",default=None,type=str)
+parser.add_argument("--gpu_number",default="-1",type=str)
 parser.add_argument('--load_weights',default=None,type=str,help='Path to a _weights.hdf5 file to load weight from previous run.')
 parser.add_argument('--load_model',default=None,type=str,help='Path to a _model.hdf5 file to load model from previous run.')
 parser.add_argument('--phase',default=None,type=int,help='1 for unknown phase, 2 for known phase', required=True)
@@ -513,7 +512,7 @@ def unpack_predictions(predictions,meanSig,sdSig,targets,datasets):
         print("RMSLE:", np.mean(squared_log_errors)**(1/2))
         print("RMSE:", np.mean(squared_errors)**(1/2))
     else:
-        prediction = predictions[0]
+        prediction = predictions[0][0]
         prediction = (prediction * sdSig) + meanSig
         prediction = np.exp(prediction)
         prediction = np.round(prediction,10)

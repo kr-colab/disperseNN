@@ -43,7 +43,7 @@ Before handing an empirical VCF to `disperseNN`, it should undergo basic filteri
 
 Below is an example command for estimating &#963; from a VCF file using a pre-trained model:
 ```
-python disperseNN.py --predict --empirical Examples/VCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345 --gpu_num -1
+python disperseNN.py --predict --empirical Examples/VCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345 --gpu_number -1
 ```
 
 Explanation of command line values:
@@ -58,7 +58,7 @@ Explanation of command line values:
 - `num_pred`: number of datasets to predict; here, the number of bootstrap replicates
 - `out`: output prefix
 - `seed`: random number seed
-
+- `gpu_number` : a GPU index. To avoid using available GPUs, specify -1. (default=-1)
 
 
 
@@ -69,7 +69,7 @@ Explanation of command line values:
 ### Prediction: tree sequences as input
 If you want to predict &#963; in simulated tree sequences, an example command is:
 ```
-python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345 --gpu_num -1
+python disperseNN.py --predict --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345 --gpu_number -1
 ```
 
 New flags, here:
@@ -94,7 +94,7 @@ New flags, here:
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
 ```
-python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.5 --out out1 --seed 12345 --gpu_num -1
+python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 100 --validation_split 0.5 --out out1 --seed 12345 --gpu_number -1
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
@@ -174,7 +174,7 @@ The training step is computationally intensive and should ideally be run on a co
 
 Our training command will use a similar settings to the above example "Training: tree sequences as input". Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below). We will sample 100x from each from each tree sequence for a total training set of size 5000- this is specified via the `on-the-fly` flag.
 ```
-python ../disperseNN.py --train --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 100 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_num -1
+python ../disperseNN.py --train --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list training_trees.txt --target_list training_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --on_the_fly 100 --batch_size 20 --threads 2 --max_epochs 10 --validation_split 0.2 --out out1 --seed 12345 --gpu_number -1
 ```
 Note: we chose to sample away from the habitat edges by 1.5km. This is because the simulation model we artifically reduces fitness near the edges.
 
@@ -187,7 +187,7 @@ Note: we chose to sample away from the habitat edges by 1.5km. This is because t
 ### Testing
 Next, we will validate the trained model using the held-out test data. This command will use a similar set of flags to the above example "Prediction: tree sequences as input".
 ```
-python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out2 --seed 12345 --gpu_num -1 > val_results.txt
+python ../disperseNN.py --predict --min_n 14 --max_n 14 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list test_trees.txt --target_list test_targets.txt --map_width 50 --edge_width 1.5 --sampling_width 1 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 50 --batch_size 2 --threads 2 --max_epochs 10 --out out2 --seed 12345 --gpu_number -1 > val_results.txt
 ```
 Note: here we handed `disperseNN` a list of paths to the targets from training; it re-calculates the mean and standard deviation from training, which it uses to back-transform the new predictions.
 
@@ -247,7 +247,7 @@ gunzip iraptus.vcf.gz
 Finally, our command for predicting &#963; from the subsetted VCF:
 
 ```
-python ../disperseNN.py --predict --empirical iraptus --min_n 14 --max_n 14 --num_snps 1000 --phase 1 --polarize 2 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 100 --out out2 --seed 12345 --gpu_num -1
+python ../disperseNN.py --predict --empirical iraptus --min_n 14 --max_n 14 --num_snps 1000 --phase 1 --polarize 2 --load_weights out1_model.hdf5 --training_targets training_targets.txt --num_pred 100 --out out2 --seed 12345 --gpu_number -1
 ```
 Note: `num_pred`, here, specifies how many bootstrap replicates to perform, that is how many replicate draws of 1000 SNPs.
 
