@@ -33,8 +33,8 @@ def rescale_locs(locs):
     x_range = maxx - minx
     y_range = maxy - miny
     sample_width = max(x_range,y_range) # re-define width to be this distance
-    locs0[:,0] =(locs0[:,0] - minx) / (maxx - minx) # rescale to (0,1)       
-    locs0[:,1] =(locs0[:,1] - miny) / (maxy - miny)
+    locs0[:,0] =(locs0[:,0] - minx) / x_range # rescale to (0,1)       
+    locs0[:,1] =(locs0[:,1] - miny) / y_range
     if x_range > y_range: # these four lines for preserving aspect ratio
         locs0[:,1] *= (y_range / x_range) 
     elif y_range > x_range:
