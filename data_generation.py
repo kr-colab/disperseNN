@@ -1,3 +1,5 @@
+# data generator code for training CNN
+
 import sys
 import numpy as np
 import tensorflow as tf

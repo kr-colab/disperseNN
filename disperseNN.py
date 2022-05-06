@@ -1,3 +1,5 @@
+# primary script for disperseNN
+
 import os
 import argparse
 from check_params import *

@@ -1,8 +1,6 @@
-
-
+# checking over the command line params, before doing anything else.                                                                                            
 import os, json
 
-# checking over the command line params, before doing anything else.
 def check_params(args):
 
     # avoid overwriting saved weights

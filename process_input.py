@@ -1,3 +1,4 @@
+# helper utils for processing empirical input data
 
 import os
 import numpy as np
