@@ -7,15 +7,14 @@ import msprime
 import tskit
 import math
 import pyslim
-import time
 import multiprocessing
 import gc
 import warnings
 
-
 class DataGenerator(tf.keras.utils.Sequence):
     "Generates data for Keras"
 
+    # initialization
     def __init__(
         self,
         list_IDs,
@@ -102,6 +101,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             np.random.shuffle(self.indexes)
 
     def cropper(self, ts, W, sample_width, edge_width, alive_inds):
+        "Cropping the map, returning individuals inside sampling window"
         cropped = []
         left_edge = np.random.uniform(
             low=edge_width, high=W - edge_width - sample_width
@@ -123,8 +123,34 @@ class DataGenerator(tf.keras.utils.Sequence):
                 cropped.append(i)
         return cropped
 
+    def unpolarize(self, snp, n):
+        "Change 0,1 encoding to major/minor allele. Also filter no-biallelic"
+        alleles = {}                                                                          
+        for i in range(n * 2):  
+            a = snp[i]                                                               
+            if a not in alleles:                                                              
+                alleles[a] = 0                                                                
+            alleles[a] += 1                                                                   
+        if len(alleles) == 2:                                                                 
+            new_genotypes = []                                                                
+            major, minor = list(set(alleles))  # set() gives random order                     
+            if alleles[major] < alleles[minor]:                                               
+                major, minor = minor, major                                                   
+            for i in range(n * 2):  # go back through and convert genotypes                   
+                a = snp[i]                                                           
+                if a == major:                                                                
+                    new_genotype = 0                                                          
+                elif a == minor:                                                              
+                    new_genotype = 1                                                          
+                new_genotypes.append(new_genotype)
+        else:
+            new_genotypes = False
+            
+        return new_genotypes
+    
     def sample_ts(self, filepath, W, edge_width, seed):
-
+        "The meat: load in and fully process a tree sequence"
+        
         # read input
         # print(filepath)
         # sys.stdout.flush()
@@ -249,54 +275,44 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # grab genos and positions
         geno_mat0 = ts.genotype_matrix()
-        pos_list = ts.tables.sites.position
+        pos_list0 = ts.tables.sites.position
 
-        time1 = time.time()
-        # change 0,1 encoding to major/minor allele
+        # change 0,1 encoding to major/minor allele  ####################### new code block: could use a careful look-over please
         if self.polarize == 2:
-            mask = [True] * (self.num_snps * 2) + [False] * (
-                ts.num_sites - (self.num_snps * 2)
-            )  # (*2 is arbitrary)
-            np.random.shuffle(mask)
-            geno_mat0, pos_list = (
-                geno_mat0[mask, :],
-                pos_list[mask],
-            )  # (keeping these together to keep things simple)
-            geno_mat1 = []
-            pos_list1 = []
-            for i in range(geno_mat0.shape[0]):
-                alleles = {}
-                for j in range(
-                    n * 2
-                ):  # diploid at this point, even if you want to collapse genotypes (which comes next)
-                    a = geno_mat0[i][j]
-                    if a not in alleles:
-                        alleles[a] = 0
-                    alleles[a] += 1
-                if len(alleles) == 2:
-                    new_genotypes = []
-                    major, minor = list(set(alleles))  # set() gives random order
-                    if alleles[major] < alleles[minor]:
-                        major, minor = minor, major
-                    for j in range(n * 2):  # go back through and convert genotypes
-                        a = geno_mat0[i][j]
-                        if a == major:
-                            new_genotype = 0
-                        elif a == minor:
-                            new_genotype = 1
-                        new_genotypes.append(new_genotype)
+            shuffled_indices = np.arange(ts.num_sites)
+            np.random.shuffle(shuffled_indices) 
+            geno_mat1 = []    
+            snp_counter = 0   
+            snp_index_map = {}
+            for s in range(self.num_snps): 
+                new_genotypes = self.unpolarize(geno_mat0[shuffled_indices[s]], n)
+                if new_genotypes != False: # if bi-allelic, add in the snp
+                    geno_mat1.append(new_genotypes)            
+                    snp_index_map[shuffled_indices[s]] = int(snp_counter)
+                    snp_counter += 1
+            while snp_counter < self.num_snps and s < ts.num_sites: # likely replacing a few non-biallelic
+                s += 1
+                new_genotypes = self.unpolarize(geno_mat0[shuffled_indices[s]], n)
+                if new_genotypes != False:
                     geno_mat1.append(new_genotypes)
-                    pos_list1.append(pos_list[i])
-            geno_mat0 = np.array(geno_mat1)
-            pos_list = np.array(pos_list1)
-        time2 = time.time()
-        print(time2 - time1, "seconds")
-
+                    snp_index_map[shuffled_indices[s]] = int(snp_counter)
+                    snp_counter += 1
+            geno_mat0 = [] # (replacing previous geno_mat0)
+            pos_list = []
+            sorted_indices = list(snp_index_map) 
+            sorted_indices.sort() # re-sorting the retained snps  
+            for snp in range(self.num_snps):
+                #print("current snp iteration:", snp, "\tindex from ts.genotype_matrix:", sorted_indices[snp], "\tindex in our filtered geno_mat", snp_index_map[sorted_indices[snp]])
+                geno_mat0.append(geno_mat1[snp_index_map[sorted_indices[snp]]])
+                pos_list.append(pos_list0[sorted_indices[snp]]) # (doesn't need map)
+        ########################################################################################
+                                                
         # sample SNPs
-        mask = [True] * self.num_snps + [False] * (geno_mat0.shape[0] - self.num_snps)
-        np.random.shuffle(mask)
-        geno_mat0 = geno_mat0[mask, :]
-        pos_list = pos_list[mask]
+        else:
+            mask = [True] * self.num_snps + [False] * (geno_mat0.shape[0] - self.num_snps)
+            np.random.shuffle(mask)
+            geno_mat0 = geno_mat0[mask, :]
+            pos_list = pos_list0[mask]
 
         # collapse genotypes, change to allele dosage (e.g. 0,1,2)
         if self.phase == 1:
@@ -316,7 +332,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         del ts
         del geno_mat0
         # del geno_mat
-        # del pos_list
         del mask
         del alive_inds
         del sampled_inds
@@ -325,7 +340,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         return geno_mat, pos_list, locs, sample_width
 
     def preprocess_sample_ts(self, geno_path, pos_path, loc_path):
-
+        "Seperate function for loading in pre-processed data"
+        
         # read input
         geno_mat = np.load(geno_path)
         pos_list = np.load(pos_path)
