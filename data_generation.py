@@ -86,11 +86,10 @@ class DataGenerator(tf.keras.utils.Sequence):
 
 
     def sample_ts(self, filepath, W, edge_width, seed):
-        sys.stderr.flush()
 
         # read input
         #print(filepath)
-        sys.stdout.flush()
+        #sys.stdout.flush()
         ts = tskit.load(filepath)
         np.random.seed(seed)
 
@@ -151,7 +150,6 @@ class DataGenerator(tf.keras.utils.Sequence):
             ts = msprime.sim_mutations(ts, rate=mu, random_seed=seed, model=msprime.SLiMMutationModel(type=0), keep=True)
             counter = 0
             while ts.num_sites < (self.num_snps*self.polarize):
-                sys.stdout.flush()
                 counter += 1
                 mu*=10
                 ts = msprime.sim_mutations(ts, rate=mu,random_seed=seed, model=msprime.SLiMMutationModel(type=0), keep=True)
@@ -171,7 +169,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 loc = ts.individual(indID).location[0:2]
                 locs0.append(loc)
 
-        # rescale locs to (0,1) 
+        # rescale locs 
         locs0=np.array(locs0) 
         minx = min(locs0[:,0])
         maxx = max(locs0[:,0])
@@ -233,7 +231,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         geno_mat0 = geno_mat0[mask,:]
         pos_list = pos_list[mask]
 
-        # unphase the genotypes, change to allele dosage (e.g. 0,1,2)
+        # collapse genotypes, change to allele dosage (e.g. 0,1,2)
         if self.phase == 1:
             geno_mat1 = np.zeros((self.num_snps,n))
             for ind in range(n):
@@ -257,9 +255,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         del sampled_inds
         gc.collect()
 
-        sys.stdout.flush()
-        sys.stderr.flush()
-
         return geno_mat,pos_list,locs,sample_width
     
 
@@ -275,7 +270,6 @@ class DataGenerator(tf.keras.utils.Sequence):
             
     def __data_generation(self, list_IDs_temp):
         'Generates data containing batch_size samples' 
-        sys.stderr.flush()
 
         # Initialization
         X1 = np.empty( (self.batch_size, self.num_snps, self.max_n*self.phase), dtype="int8" ) # vcf
@@ -297,10 +291,8 @@ class DataGenerator(tf.keras.utils.Sequence):
                 else:
                     width_list.append(self.widths[ID])
                 edge_list.append(self.edges[ID])
-            sys.stdout.flush()
             seeds = np.random.randint(1e9, size=(self.batch_size))
 
-            sys.stdout.flush()
             pool = multiprocessing.Pool(self.threads, maxtasksperchild=1) 
             batch = pool.starmap(self.sample_ts, zip(ts_list, width_list, edge_list, seeds))
 
@@ -322,9 +314,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 loc_list.append(self.locs[ID])
                 geno_list.append(self.genos[ID])
                 pos_list.append(self.poss[ID])
-            sys.stdout.flush()
             seeds = np.random.randint(1e9, size=(self.batch_size))
-            sys.stdout.flush()
             pool = multiprocessing.Pool(self.threads, maxtasksperchild=1)
             batch = pool.starmap(self.preprocess_sample_ts, zip(geno_list, pos_list, loc_list))
             # unpack the multiprocess output                                                   
@@ -335,8 +325,4 @@ class DataGenerator(tf.keras.utils.Sequence):
             X = [X1,X2,X3,X4]
 
         gc.collect()
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-
         return (X, y)
