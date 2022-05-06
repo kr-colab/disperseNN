@@ -90,23 +90,6 @@ New flags, here:
 
 
 
-### Prediction: using pre-processed tensors
-In some cases we may not want to work with tree sequences, e.g. if the tree sequences are very large or if using a different simulator. Instead it may be useful to pre-process a number of simulations up front (outside of `disperseNN`), and provide the ready-to-go tensors straight to `disperseNN`. Genotypes, genomic positions, sample locations, and the sampling width, should be saved as .npy.
-
-```
-python disperseNN.py --predict --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --map_width 50 --edge_width 3 --sampling_width 1  --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 1 --batch_size 1 --threads 1 --out out1 --seed 12345
-```
-
-- `preprocess`: this flag is used to specify that you're providing pre-processed input tensors
-- `geno_list`: list of paths to the genotype tensors (.npy)
-- `loc_list`: list of paths to the locations tensors (.npy)
-- `pos_list`: list of paths to the positions tensors (.npy)
-- `samplewidth_list`: list of paths to the sample width tensors (.npy)
-
-
-
-
-
 
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input.
@@ -119,15 +102,6 @@ python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_leng
 
 
 
-
-
-
-### Training: with pre-processed tensors
-As before, pre-processed tensors may be used instead of tree sequences:
-```
-python disperseNN.py --train --preprocess --min_n 100 --max_n 100 --num_snps 5000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --geno_list Examples/Genos/genos_list2.txt --pos_list Examples/Positions/pos_list2.txt --loc_list Examples/Locs/loc_list2.txt --samplewidth_list Examples/SampleWidths/samplewidth_list2.txt --target_list Examples/Targets/target_list2.txt --batch_size 5 --threads 1 --max_epochs 100 --validation_split 0.5 --out out2 --seed 12345
-```
-This command used a new combination of flags, but the individual flags should have been described above.
 
 
 
