@@ -15,7 +15,6 @@ def load_modules():
     import tensorflow as tf
     from tensorflow import keras
     import json
-    global DataGenerator
     return
 
 parser=argparse.ArgumentParser()
@@ -473,7 +472,7 @@ def unpack_predictions(predictions,meanSig,sdSig,targets,datasets):
             prediction = (predictions[i][0] * sdSig) + meanSig
             error = (trueval-prediction)**2
             squared_errors.append(error)
-            print(datasets[i], np.round(np.exp(trueval),10)), np.round(np.exp(prediction),10))
+            print(datasets[i], np.round(np.exp(trueval),10), np.round(np.exp(prediction),10))
         print("RMSE in log space:", np.mean(squared_errors)**(1/2))
 
     else:
