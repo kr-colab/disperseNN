@@ -1,45 +1,18 @@
 
+
 import os, json
 
+# checking over the command line params, before doing anything else.
 def check_params(args):
 
-    if args.out == None:
-        print("specify output")
-        exit()
-    if args.num_snps == None:
-        print("specify num snps")
-        exit()
-    if args.max_n == None:
-        print("specify n")
-        exit()
-
-
-    # avoid overwriting saved weights or predsets                                
+    # avoid overwriting saved weights
     if os.path.exists(args.out+"_model.hdf5"):
         print("saved model with specified name already  exists")
         exit()
-    if os.path.exists(args.out+"_predsets"):
-        print("saved predsets with specified name already exist")
-        exit()
-    if os.path.exists(args.out+'_params.json'):
-        print("saved params with specified name already exist")
-        exit()
 
-    # check some more params                                                     
+    # check some other param combinations                                                     
     if args.train == False and args.predict == False:
         print("either train or predict")
-        exit()
-    # if args.recapitate != "True" and args.recapitate != "False":
-    #     print("specify recapitate option")
-    #     exit()
-    # if args.mutate != "True" and args.mutate != "False":
-    #     print("specify mutate option")
-    #     exit()
-    if args.phase != 1 and args.phase != 2:
-        print("incorrect phasing specification")
-        exit()
-    if args.polarize != 1 and args.polarize !=2:
-        print("polarize argument incorrectly specified")
         exit()
     if args.sampling_width != None:
         if args.sampling_width > 1 or args.sampling_width <= 0:
@@ -62,7 +35,7 @@ def check_params(args):
          print("\n\nIf W and S are fixed, you must also fix the edge_width; otherwise the CNN can see sigma directly in the fourth input\n\n")
          exit()
 
-    # in training, we normalize the targets; need to back-transform using the mean and sd from training                                       
+    # check that mean and sd are provided in exactly one form
     count_training_inputs=0
     if args.train == True:
         count_training_inputs += 1
@@ -77,7 +50,4 @@ def check_params(args):
         print("multiple training inputs, unclear which to use")
         exit()
 
-    # # save params
-    # with open(args.out+'_params.json', 'w') as f:
-    #     json.dump(args.__dict__, f, indent=2)
-    # f.close()
+

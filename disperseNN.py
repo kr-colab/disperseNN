@@ -14,7 +14,6 @@ def load_modules():
     global tf
     import tensorflow as tf
     from tensorflow import keras
-    import json
     return
 
 parser=argparse.ArgumentParser()
@@ -28,10 +27,10 @@ parser.add_argument("--width_list",help="list of map widths.", default=None)
 parser.add_argument("--edge_width",help="crop a fixed edge width for each map",default=None,type=float)
 parser.add_argument("--map_width",help="the whole habitat",default=None,type=float)
 parser.add_argument("--sampling_width",help="just the sampling area",default=None,type=float)
-parser.add_argument("--num_snps",default=None,type=int,help="maximum number of SNPs across all datasets (for pre-allocating memory)")
+parser.add_argument("--num_snps",default=None,type=int,help="maximum number of SNPs across all datasets (for pre-allocating memory)", required=True)
 parser.add_argument("--num_pred",default=None,type=int,help="number of datasets to predict on")
 parser.add_argument("--min_n",default=None,type=int,help="minimum number of samples (for pre-allocating memory)")
-parser.add_argument("--max_n",default=None,type=int,help="maximum number of samples (for pre-allocating memory)")
+parser.add_argument("--max_n",default=None,type=int,help="maximum number of samples (for pre-allocating memory)", required=True)
 parser.add_argument("--mu",help="baseline mutation rate: mu is increased until num_snps is achieved",default=1e-15,type=float)
 parser.add_argument("--rho",help="recombination rate",default=1e-8,type=float)
 parser.add_argument("--on_the_fly",default=1,type=int,help="number of samples (with replacement) from each tree sequence")
@@ -44,13 +43,13 @@ parser.add_argument("--dropout_prop",default=0,type=float, help="proportion of w
 parser.add_argument('--recapitate',type=str, help="recapitate on-the-fly; True or False, no default")
 parser.add_argument('--mutate',type=str, help="add mutations on-the-fly; True or False, no default")
 parser.add_argument("--crop",default=None,type=float, help="map-crop size")
-parser.add_argument("--out",help="file name stem for output",default=None)
+parser.add_argument("--out",help="file name stem for output",default=None, required=True)
 parser.add_argument("--seed",default=None,type=int, help="random seed.")
 parser.add_argument("--gpu_number",default=None,type=str)
 parser.add_argument('--load_weights',default=None,type=str,help='Path to a _weights.hdf5 file to load weight from previous run.')
 parser.add_argument('--load_model',default=None,type=str,help='Path to a _model.hdf5 file to load model from previous run.')
-parser.add_argument('--phase',default=None,type=int,help='1 for unknown phase, 2 for known phase')
-parser.add_argument('--polarize',default=None,type=int,help='2 for major/minor, 1 for ancestral/derived') 
+parser.add_argument('--phase',default=None,type=int,help='1 for unknown phase, 2 for known phase', required=True)
+parser.add_argument('--polarize',default=None,type=int,help='2 for major/minor, 1 for ancestral/derived', required=True) 
 parser.add_argument('--keras_verbose',default=1,type=int,
                     help='verbose argument passed to keras in model training. \
                     0 = silent. 1 = progress bars for minibatches. 2 = show epochs. \
@@ -238,9 +237,6 @@ def prep_trees_and_train():
     partition['train'] = []
     partition['validation'] = []
     num_reps = args.on_the_fly
-    if (len(val)*num_reps)%args.batch_size!=0 or (len(train)*num_reps)%args.batch_size!=0:
-        print("val/train sets each need to be divisible by batch_size; otherwise some batches will have missing data")
-        exit()
     for i in train:
         for j in range(num_reps):
             partition['train'].append(i)
