@@ -251,7 +251,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         geno_mat = np.zeros((self.num_snps, self.max_n*self.phase))
         geno_mat[:,0:n*self.phase] = geno_mat0
 
-        # rescale genomic positions to (0,1)
+        # rescale genomic positions by genome length
         pos_list = pos_list / self.genome_length
 
         del ts

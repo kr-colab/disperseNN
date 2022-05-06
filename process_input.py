@@ -23,7 +23,7 @@ def project_locs(locs,out,seed):
     os.system(comm)              
     return new_locs
 
-# rescale locs to (0,1)                                                      
+# rescale locs
 def rescale_locs(locs):
     locs0=np.array(locs)
     minx = min(locs0[:,0])
