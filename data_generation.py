@@ -46,7 +46,12 @@ class DataGenerator(tf.keras.utils.Sequence):
         "Initialize a few things"
         self.on_epoch_end()
         np.random.seed(self.baseseed)
-        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning) # suppressing msprime warning
+        warnings.filterwarnings( # pyslim.load() 
+            action='ignore',
+            category=UserWarning,
+            module='pyslim'
+        )
+        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning) # pyslim.recapitate() 
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -134,7 +139,6 @@ class DataGenerator(tf.keras.utils.Sequence):
             alive_inds.append(i.id)
         if self.recapitate == "True":
             N = len(alive_inds)
-            # ts = ts.recapitate(recombination_rate=self.rho, Ne=N, random_seed=seed)
             ts = pyslim.recapitate(
                 ts, recombination_rate=self.rho, ancestral_Ne=N, random_seed=seed
             )
