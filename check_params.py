@@ -1,5 +1,5 @@
 # checking over the command line params, before doing anything else.
-import os, json
+import os
 
 
 def check_params(args):

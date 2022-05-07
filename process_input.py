@@ -1,8 +1,6 @@
 # helper utils for processing empirical input data
 
-import os
 import numpy as np
-from read_input import *
 import sys
 from geopy import distance
 

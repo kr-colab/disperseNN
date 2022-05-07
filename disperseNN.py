@@ -1,4 +1,4 @@
-# primary script for disperseNN
+# main code for disperseNN
 
 import os
 import argparse
@@ -10,11 +10,7 @@ from sklearn.model_selection import train_test_split
 
 def load_modules():
     print("loading bigger modules")
-    # *** need to check if these are all needed
-    import sys, random, math, gc
-    import argparse
     import numpy as np
-
     global tf
     import tensorflow as tf
     from tensorflow import keras

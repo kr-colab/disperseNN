@@ -4,11 +4,8 @@ import sys
 import numpy as np
 import tensorflow as tf
 import msprime
-import tskit
-import math
 import pyslim
 import multiprocessing
-import gc
 import warnings
 from process_input import rescale_locs
 from attrs import define,field
@@ -128,7 +125,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         # read input
         # print(filepath)
         # sys.stdout.flush()
-        ts = tskit.load(filepath)
+        ts = pyslim.load(filepath)
         np.random.seed(seed)
 
         # recapitate
