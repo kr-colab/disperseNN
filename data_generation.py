@@ -11,72 +11,45 @@ import multiprocessing
 import gc
 import warnings
 from process_input import rescale_locs
+from attrs import define,field
 
+@define
 class DataGenerator(tf.keras.utils.Sequence):
     "Generates data for Keras"
 
-    # initialization
-    def __init__(
-        self,
-        list_IDs,
-        targets,
-        trees,
-        genome_length,
-        threads,
-        batch_size,
-        num_snps,
-        min_n,
-        max_n,
-        mu,
-        rho,
-        baseseed,
-        recapitate,
-        mutate,
-        crop,
-        map_width,
-        widths,
-        sampling_width,
-        edges,
-        phase,
-        polarize,
-        sample_widths,
-        genos,
-        poss,
-        locs,
-        preprocessed,
-        shuffle=True,
-    ):
-        "Initialization"
-        self.num_snps = num_snps
-        self.min_n = min_n
-        self.max_n = max_n
-        self.batch_size = batch_size
-        self.targets = targets
-        self.list_IDs = list_IDs
-        self.shuffle = shuffle
-        self.trees = trees
-        self.genome_length = genome_length
-        self.mu = mu
-        self.threads = threads
-        self.rho = rho
-        self.baseseed = baseseed
-        self.recapitate = recapitate
-        self.mutate = mutate
-        self.crop = crop
-        self.map_width = map_width
-        self.widths = widths
-        self.sampling_width = sampling_width
-        self.edges = edges
-        self.phase = phase
-        self.polarize = polarize
-        self.sample_widths = sample_widths
-        self.genos = genos
-        self.poss = poss
-        self.locs = locs
-        self.preprocessed = preprocessed
+    list_IDs: list
+    targets: dict 
+    trees: dict
+    num_snps: int
+    min_n: int
+    max_n: int
+    batch_size: int
+    genome_length: int
+    mu: float
+    threads: int
+    shuffle: bool
+    rho: float
+    baseseed: int
+    recapitate: bool
+    mutate: bool
+    crop: float
+    map_width: float
+    widths: dict
+    sampling_width: float
+    edges: dict
+    phase: int
+    polarize: int
+    sample_widths: dict
+    genos: dict
+    poss: dict
+    locs: dict
+    preprocessed: bool
+
+    def __attrs_post_init__(self):
+        "Initialize a few things"
         self.on_epoch_end()
         np.random.seed(self.baseseed)
-        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
+        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning) # suppressing msprime warning
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -335,7 +308,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         # Initialization
         X1 = np.empty(
             (self.batch_size, self.num_snps, self.max_n * self.phase), dtype="int8"
-        )  # vcf
+        )  # genos
         X2 = np.empty((self.batch_size, self.num_snps))  # positions
         X3 = np.empty((self.batch_size, 2, self.max_n))  # locs
         X4 = np.empty((self.batch_size,))  # sample widths

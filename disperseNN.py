@@ -354,6 +354,11 @@ def prep_trees_and_train():
         sim_ids, round(args.validation_split * total_sims), replace=False
     )
     train = np.array([x for x in sim_ids if x not in val])
+    if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
+        print(
+            "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
+        )
+        exit()
 
     # organize "partitions" to hand to data generator
     partition = {}
@@ -427,6 +432,11 @@ def prep_preprocessed_and_train():
         sim_ids, round(args.validation_split * total_sims), replace=False
     )
     train = np.array([x for x in sim_ids if x not in val])
+    if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
+        print(
+            "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
+        )
+        exit()
 
     # organize "partitions" to hand to data generator
     partition = {}
@@ -591,11 +601,6 @@ def prep_trees_and_pred(meanSig, sdSig):
     
     # organize "partition" to hand to data generator
     partition = {}
-    if (args.num_pred) % args.batch_size != 0:
-        print(
-            "\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
-        )
-        exit()
     partition["prediction"] = np.arange(0, args.num_pred)
 
     # get generator ready
@@ -611,7 +616,7 @@ def prep_trees_and_pred(meanSig, sdSig):
         sample_widths=None,
     )
     generator = DataGenerator(partition["prediction"], **params)
-
+    
     # predict
     load_modules()
     model, checkpointer, earlystop, reducelr = load_network()
