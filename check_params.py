@@ -1,4 +1,4 @@
-# checking over the command line params, before doing anything else.
+# checking over the command line params
 import os
 
 

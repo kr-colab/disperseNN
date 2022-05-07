@@ -276,7 +276,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             geno_mat0 = geno_mat0[mask, :]
             pos_list1 = pos_list0[mask] # (new variable, to stay consistent with above if-block)
 
-        # collapse genotypes, change to allele dosage (e.g. 0,1,2)
+        # collapse genotypes, change to minor allele dosage (e.g. 0,1,2)
         if self.phase == 1:
             geno_mat1 = np.zeros((self.num_snps, n))
             for ind in range(n):

@@ -203,7 +203,7 @@ def load_network():
     # update 1dconv+pool iterations based on number of SNPs
     num_conv_iterations = int(len(str(args.num_snps)) - 3)
 
-    ### 1d cnn
+    # cnn architecture
     conv_kernal_size = 2
     pooling_size = 10
     filter_size = 64
@@ -397,6 +397,7 @@ def prep_trees_and_train():
 
 
 def prep_preprocessed_and_train():
+    
     # read targets, save edges
     print("loading input data; this could take a while if the lists are very long")
     targets = read_single_value(args.target_list)
@@ -465,7 +466,7 @@ def prep_preprocessed_and_train():
 
 
 def prep_empirical_and_pred(meanSig, sdSig):
-    # convert locs
+    # project and rescale locs
     locs = read_locs(args.empirical + ".locs")
     locs = project_locs(locs,args.map_precision)
     locs, sampling_width = rescale_locs(locs)
@@ -526,6 +527,7 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
 
 
 def prep_preprocessed_and_pred(meanSig, sdSig):
+    
     # load inputs
     genos = read_dict(args.geno_list)
     poss = read_dict(args.pos_list)
@@ -565,6 +567,7 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
 
 
 def prep_trees_and_pred(meanSig, sdSig):
+    
     # read targets, save edges                                                     
     targets = read_single_value(args.target_list)
     targets = np.log(targets)
@@ -618,6 +621,7 @@ def prep_trees_and_pred(meanSig, sdSig):
 
 
 def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
+    
     squared_log_errors = []
     squared_errors = []
 
@@ -649,7 +653,6 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
 # train
 if args.train == True:
     print("starting training pipeline")
-    # prep input and initialize generators
     if args.preprocessed == False:
         print("using tree sequences")
         prep_trees_and_train()
@@ -660,7 +663,8 @@ if args.train == True:
 # predict
 if args.predict == True:
     print("starting prediction pipeline")
-    # first we need the mean and sd from training to back-transform the z-normalization
+    
+    # first need mean and sd from training
     if args.training_targets != None:
         train_targets = read_single_value(args.training_targets)
         train_targets = list(map(float, train_targets))
@@ -671,7 +675,7 @@ if args.predict == True:
         meanSig, sdSig = args.training_mean, args.training_sd
     print("mean and sd:", meanSig, sdSig)
 
-    # prep_input
+    # prep inputs and predict
     if args.empirical == None:
         print("predicting on simulated data")
         if args.preprocessed == True:

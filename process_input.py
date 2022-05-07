@@ -5,7 +5,7 @@ import sys
 from geopy import distance
 
 
-# project locations from ellipsoid (lat,long) to square (km)
+# project locations from ellipsoid (lat,long) to square map (km)
 def project_locs(coords,precision):
 
     # find min/max lat and long
@@ -21,7 +21,7 @@ def project_locs(coords,precision):
         print("samples coords span over 180 degrees lat or long; the code isn't ready to deal with that")
         exit()
 
-    # find a good S— that is, the width of the sampling window
+    # find a good width for the sampling window
     lat1 = distance.distance([min_lat,min_long], [max_lat,min_long]).km # confirmed ellipsoid='WGS-84' by default
     lat2 = distance.distance([min_lat,max_long], [max_lat,max_long]).km
     long1 = distance.distance([min_lat,min_long], [min_lat,max_long]).km
@@ -82,7 +82,7 @@ def rescale_locs(locs):
     maxy = max(locs0[:, 1])
     x_range = maxx - minx
     y_range = maxy - miny
-    sample_width = max(x_range, y_range)  # re-define width to be this distance
+    sample_width = max(x_range, y_range)
     locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)
     locs0[:, 1] = (locs0[:, 1] - miny) / y_range
     if x_range > y_range:  # these four lines for preserving aspect ratio
@@ -120,7 +120,7 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
                 geno = newline[field].split(":")[0].split("/")
                 geno = [int(geno[0]), int(geno[1])]
                 if phase == 1:
-                    genos.append(sum(geno))  # collapsed genotypes
+                    genos.append(sum(geno)) 
                 elif phase == 2:
                     geno = [min(geno), max(geno)]
                     genos.append(geno[0])
