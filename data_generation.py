@@ -10,6 +10,7 @@ import pyslim
 import multiprocessing
 import gc
 import warnings
+from process_input import rescale_locs
 
 class DataGenerator(tf.keras.utils.Sequence):
     "Generates data for Keras"
@@ -253,26 +254,12 @@ class DataGenerator(tf.keras.utils.Sequence):
                 locs0.append(loc)
 
         # rescale locs
-        locs0 = np.array(locs0)
-        minx = min(locs0[:, 0])
-        maxx = max(locs0[:, 0])
-        miny = min(locs0[:, 1])
-        maxy = max(locs0[:, 1])
-        x_range = maxx - minx
-        y_range = maxy - miny
-        sample_width = max(x_range, y_range)  # re-define width to be this distance
-        locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)
-        locs0[:, 1] = (locs0[:, 1] - miny) / y_range
-        if x_range > y_range:  # these four lines for preserving aspect ratio
-            locs0[:, 1] *= y_range / x_range
-        elif y_range > x_range:
-            locs0[:, 0] *= x_range / y_range
-
+        locs0,sample_width = rescale_locs(locs0)
+            
         # stuff locs into sparse array
-        locs = np.zeros((self.max_n, 2))
-        locs[0:n, :] = locs0
-        locs = locs.T
-
+        locs = np.zeros((2, self.max_n))
+        locs[:, 0:n] = locs0
+        
         # grab genos and positions
         geno_mat0 = ts.genotype_matrix()
         pos_list0 = ts.tables.sites.position

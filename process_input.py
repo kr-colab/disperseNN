@@ -75,10 +75,6 @@ def project_locs(coords,precision):
     return projection
 
 
-
-
-
-
 # rescale locs
 def rescale_locs(locs):
     locs0 = np.array(locs)
@@ -95,11 +91,12 @@ def rescale_locs(locs):
         locs0[:, 1] *= y_range / x_range
     elif y_range > x_range:
         locs0[:, 0] *= x_range / y_range
-    test_locs = locs0.T
+    locs0 = locs0.T
     sample_width = np.array(sample_width)
-    return test_locs, sample_width
+    return locs0, sample_width
 
 
+# pad locations with zeros
 def pad_locs(locs, max_n):
     padded = np.zeros((2, max_n))
     n = locs.shape[1]
