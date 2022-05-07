@@ -188,7 +188,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--map_precision",
-    default=1e-5,
+    default=1e-3,
     type=float,
     help="precision for the empirical map projection. 0.00001 takes 30s and should get us within 0.5m.",
 )
