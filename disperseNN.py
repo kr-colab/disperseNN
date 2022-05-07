@@ -667,7 +667,6 @@ if args.predict == True:
     # first need mean and sd from training
     if args.training_targets != None:
         train_targets = read_single_value(args.training_targets)
-        train_targets = list(map(float, train_targets))
         train_targets = np.log(train_targets)
         meanSig = np.mean(train_targets)
         sdSig = np.std(train_targets)
