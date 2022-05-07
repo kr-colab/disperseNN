@@ -6,7 +6,7 @@ from check_params import *
 from read_input import *
 from process_input import *
 from data_generation import DataGenerator
-
+from sklearn.model_selection import train_test_split
 
 def load_modules():
     print("loading bigger modules")
@@ -350,16 +350,13 @@ def prep_trees_and_train():
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
-    val = np.random.choice(
-        sim_ids, round(args.validation_split * total_sims), replace=False
-    )
-    train = np.array([x for x in sim_ids if x not in val])
+    train, val = train_test_split(sim_ids, test_size=args.validation_split)    
     if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
         exit()
-
+    
     # organize "partitions" to hand to data generator
     partition = {}
     partition["train"] = []
@@ -428,10 +425,7 @@ def prep_preprocessed_and_train():
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
-    val = np.random.choice(
-        sim_ids, round(args.validation_split * total_sims), replace=False
-    )
-    train = np.array([x for x in sim_ids if x not in val])
+    train, val = train_test_split(sim_ids, test_size=args.validation_split)
     if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
