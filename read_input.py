@@ -66,8 +66,8 @@ def read_locs(path):
     collection = []
     with open(path) as infile:
         for line in infile:
-            # newline = map(float,line.strip().split())
             newline = line.strip().split()
+            newline = list(map(float,newline))
             collection.append(newline)
     return collection
 

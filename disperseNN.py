@@ -186,6 +186,12 @@ parser.add_argument(
     type=float,
     help="learning rate. Default=1e-3. 1e-4 seems to work well for some things.",
 )
+parser.add_argument(
+    "--map_precision",
+    default=1e-5,
+    type=float,
+    help="precision for the empirical map projection. 0.00001 takes 30s and should get us within 0.5m.",
+)
 args = parser.parse_args()
 check_params(args)
 
@@ -461,7 +467,7 @@ def prep_preprocessed_and_train():
 def prep_empirical_and_pred(meanSig, sdSig):
     # convert locs
     locs = read_locs(args.empirical + ".locs")
-    locs = project_locs(locs, args.out, args.seed)
+    locs = project_locs(locs,args.map_precision)
     locs, sampling_width = rescale_locs(locs)
     locs = pad_locs(locs, args.max_n)
     locs = np.reshape(locs, (1, locs.shape[0], locs.shape[1]))
@@ -494,7 +500,7 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
     datasets = np.array(read_list(args.geno_list))  # (filenames for output)
     poss = read_dict(args.pos_list)
     locs = read_locs(args.empirical + ".locs")
-    locs = project_locs(locs, args.out, args.seed)
+    locs = project_locs(locs,args.map_precision)
     locs, sampling_width = rescale_locs(locs)
     locs = pad_locs(locs, args.max_n)
     locs = np.reshape(locs, (1, locs.shape[0], locs.shape[1]))
