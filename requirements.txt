@@ -6,3 +6,4 @@ tskit
 slim
 pyslim
 geopy
+attrs
