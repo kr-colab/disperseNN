@@ -164,7 +164,7 @@ parallel -j 2 < sim_commands.txt
 Note: the carrying capacity in this model, K, corresponds roughly to density. However, to be more precise it would be good to closely document the census size for varying Ks, in order to find the best K to get exactly 4 individuals per square km on average (the census size will fluctuate a bit). 
 
 
-One more step before training: we need to recapitate the tree sequences. Although `disperseNN` has an option to recaptitate during training, it'll save us time in the long run if we recapitate up front (runs for a few minutes, to an hour, depending on threads):
+One more step before training: we need to recapitate the tree sequences. Although `disperseNN` has an option to recapitate during training, it'll save us time in the long run if we recapitate up front (runs for a few minutes, to an hour, depending on threads):
 ```
 for i in {1..100};
 do
