@@ -529,13 +529,13 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
 def prep_preprocessed_and_pred(meanSig, sdSig):
     
     # load inputs
+    targets = read_single_value(args.target_list)
+    targets = np.log(targets)
+    targets = dict_from_list(targets)
     genos = read_dict(args.geno_list)
     poss = read_dict(args.pos_list)
     locs = read_dict(args.loc_list)
     sample_widths = load_single_value_dict(args.samplewidth_list)
-    targets = read_single_value(args.target_list)
-    targets = np.log(targets)
-    targets = dict_from_list(targets)
 
     # organize "partition" to hand to data generator
     partition = {}
@@ -571,17 +571,12 @@ def prep_trees_and_pred(meanSig, sdSig):
     # read targets, save edges                                                     
     targets = read_single_value(args.target_list)
     targets = np.log(targets)
+    targets = dict_from_list(targets)
     total_sims = len(targets)
     if args.edge_width == 'sigma':
         edges = read_single_value_dict(args.target_list)
     else:
         edges = fill_dict_single_value(float(args.edge_width),total_sims)
-
-    # normalize maps                                                               
-    meanSig = np.mean(targets)
-    sdSig = np.std(targets)
-    targets = [(x - meanSig) / sdSig for x in targets]  # center and scale         
-    targets = dict_from_list(targets)
 
     # tree sequences                                                
     trees = read_dict(args.tree_list)
@@ -598,7 +593,7 @@ def prep_trees_and_pred(meanSig, sdSig):
 
     # get generator ready
     params = make_generator_params_dict(
-        targets,
+        targets, 
         trees=trees,
         widths=widths,
         edges=edges,
@@ -626,7 +621,6 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
     if args.empirical == None:
         for i in range(len(predictions)):
             trueval = float(targets[i])
-            trueval = (trueval * sdSig) + meanSig
             prediction = predictions[i][0]
             prediction = (prediction * sdSig) + meanSig
             error = (trueval - prediction) ** 2
