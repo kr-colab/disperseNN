@@ -99,7 +99,7 @@ python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_leng
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
 - `on_the_fly`: on-the-fly mode takes more than one sample from each tree sequence, augmenting the training set while saving simulation time.
-- `gpu_index` : GPU index. To avoid using available GPUs, skip this flag or say -1. To use any available GPU say 'x'.
+- `gpu_index` : use this flag to specify a GPU number. To avoid using available GPUs, skip this flag or say -1. To use any available GPU say 'x'.
 
 
 
