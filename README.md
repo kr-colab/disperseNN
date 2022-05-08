@@ -59,7 +59,7 @@ Explanation of command line values:
 - `num_pred`: number of datasets to predict; here, the number of bootstrap replicates
 - `out`: output prefix
 - `seed`: random number seed
-- `gpu_number` : a GPU index. To avoid using available GPUs, specify -1. (default=-1)
+- `gpu_number` : a GPU index. To avoid using available GPUs, skip this flag or say -1. Note: for the current prediction GPUs may not be used, because training was done on a CPU.
 
 
 
