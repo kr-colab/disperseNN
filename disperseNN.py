@@ -197,8 +197,7 @@ def load_network():
     if args.seed is not None:
         np.random.seed(args.seed)
         tf.random.set_seed(args.seed)
-    if args.gpu_number is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_number
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_number
 
     # update 1dconv+pool iterations based on number of SNPs
     num_conv_iterations = int(len(str(args.num_snps)) - 3)
