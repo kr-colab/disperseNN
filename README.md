@@ -5,7 +5,7 @@
 pip install -r requirements.txt 
 ``` 
 
-You will also need to install SLiM v3.7, in order to run sims and to follow along in the below Vignette. Instuctions from: https://messerlab.org/slim/
+You will also need to install SLiM v3.7, in order to run sims and to follow along in the below Vignette. Instructions here: https://messerlab.org/slim/
 
 
 
