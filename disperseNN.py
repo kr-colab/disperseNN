@@ -621,14 +621,14 @@ def prep_trees_and_pred(meanSig, sdSig):
 
 
 def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
-    
     squared_log_errors = []
     squared_errors = []
-
     if args.empirical == None:
         for i in range(len(predictions)):
-            trueval = targets[i]
-            prediction = (predictions[i][0] * sdSig) + meanSig
+            trueval = float(targets[i])
+            trueval = (trueval * sdSig) + meanSig
+            prediction = predictions[i][0]
+            prediction = (prediction * sdSig) + meanSig
             error = (trueval - prediction) ** 2
             squared_log_errors.append(error)
             trueval = np.exp(trueval)
@@ -646,6 +646,7 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
         print(datasets, prediction)
 
     return
+
 
 
 ### main ###

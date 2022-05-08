@@ -6,7 +6,7 @@ def check_params(args):
 
     # avoid overwriting saved weights
     if os.path.exists(args.out + "_model.hdf5"):
-        print("saved model with specified name already  exists")
+        print("saved model with specified name already exists")
         exit()
 
     # check some other param combinations
