@@ -44,7 +44,7 @@ Before handing an empirical VCF to `disperseNN`, it should undergo basic filteri
 
 Below is an example command for estimating &#963; from a VCF file using a pre-trained model (should take <30s to run):
 ```
-python disperseNN.py --predict --empirical Examples/VCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345 --gpu_number -1
+python disperseNN.py --predict --empirical Examples/VCFs/halibut --max_n 100 --num_snps 5000 --phase 1 --polarize 2 --load_weights Saved_models/out136_2400.12_model.hdf5 --training_mean -0.9874806682910889 --training_sd 1.8579295139087375 --num_pred 10 --out out1 --seed 12345
 ```
 
 Explanation of command line values:
@@ -59,7 +59,6 @@ Explanation of command line values:
 - `num_pred`: number of datasets to predict; here, the number of bootstrap replicates
 - `out`: output prefix
 - `seed`: random number seed
-- `gpu_number` : a GPU index. To avoid using available GPUs, skip this flag or say -1. Note: for the current prediction GPUs may not be used, because training was done on a CPU.
 
 
 
@@ -95,11 +94,12 @@ New flags, here:
 ### Training: tree sequences as input
 Below is an example command for the training step. This example uses tree sequences as input (runs for minutes to hours, depending on threads).
 ```
-python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 10 --validation_split 0.5 --out out1 --seed 12345
+python disperseNN.py --train --min_n 10 --max_n 10 --num_snps 1000 --genome_length 100000000 --recapitate False --mutate True --phase 1 --polarize 2 --tree_list Examples/TreeSeqs/tree_list1.txt --target_list Examples/Targets/target_list1.txt --map_width 50 --edge_width 3 --sampling_width 1 --on_the_fly 100 --batch_size 10 --threads 1 --max_epochs 10 --validation_split 0.5 --out out1 --seed 12345 --gpu_index -1
 ```
 - `max_epochs`: for training
 - `validation_split`: proportion of training datasets to hold out for validation; that is, within-training validation.
 - `on_the_fly`: on-the-fly mode takes more than one sample from each tree sequence, augmenting the training set while saving simulation time.
+- `gpu_index` : GPU index. To avoid using available GPUs, skip this flag or say -1. To use any available GPU say 'x'.
 
 
 
