@@ -5,6 +5,9 @@
 pip install -r requirements.txt 
 ``` 
 
+You will also need to install SLiM v3.7, in order to run sims and to follow along in the below Vignette. Instuctions from: https://messerlab.org/slim/
+
+
 
 ## Overview
 `disperseNN` has two modes: 
@@ -128,16 +131,31 @@ Simulation programs other than SLiM may be used to make training data, as long a
 ### Custom simulations
 We will analyze a theoretical population of *Internecivus raptus*. Let's assume we have independent estimates from previously studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km, respectively. With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;. Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
 
-Let's jump into a new working directory and run the simulations (runs for a few minutes, to an hour, depending on threads)::
+Let's first jump into a new working directory:
 ```
 mkdir -p Temp_wd
 cd Temp_wd
+```
+
+Next, install SLiM locally: 
+```
+wget https://github.com/MesserLab/SLiM/releases/download/v3.7.1/SLiM.zip
+unzip SLiM.zip
+mkdir build
+cd build
+cmake ../SLiM
+make slim
+cd ../
+```
+
+Now we can run the simulations (runs for a few minutes, to an hour, depending on threads)::
+```
 mkdir TreeSeqs Targets
 n=100
 for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
-    echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
+    echo "build/slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'TreeSeqs/output'\" ../SLiM_recipes/map12.slim" >> sim_commands.txt
     echo $sigma > Targets/output_$i.target
     echo Targets/output_$i.target >> target_list.txt
 done
