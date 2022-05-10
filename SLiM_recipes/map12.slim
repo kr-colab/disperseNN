@@ -6,7 +6,7 @@ initialize() {
     print( c("new seed:",getSeed()) );
     initializeSLiMModelType("nonWF");
     initializeSLiMOptions(dimensionality="xy");
-    initializeTreeSeq(checkCoalescence=T);
+    initializeTreeSeq(); 
 
     print(sigma);
 
@@ -41,8 +41,8 @@ reproduction() {
             pos = individual.spatialPosition + rnorm(2, 0, SD);
             if (p1.pointInBounds(pos)) {
                offspring = subpop.addCrossed(individual, mate);
-               		 offspring.setSpatialPosition(pos);
-          		 }
+               offspring.setSpatialPosition(pos);
+            }
         }
     }
     return;
@@ -72,18 +72,18 @@ early() {
 }
 
 1: late() {
-        // if(p1.individualCount>5000000){
-        //         catn("too big. We're callin it off.");
-        // sim.simulationFinished();
-        // }
-
-	print(c("Finished generation", sim.generation, "; N=", p1.individualCount));
-
-	if (sim.generation == maxgens){ 
-	    sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
-	    catn("Done.");
-	    sim.simulationFinished();
-	}
+        print(c("Finished generation", sim.generation, "; N=", p1.individualCount));
+        if (p1.individualCount < (0.75*K*W*W)){
+           catn("Population declined more than 25% in first 100 gens.");
+           sim.simulationFinished();
+        }
+        else{
+		if (sim.generation == maxgens){
+                   sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
+                   catn("Done.");
+                   sim.simulationFinished();
+                }
+        }
 }
 
 
