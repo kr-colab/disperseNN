@@ -10,7 +10,6 @@ def project_locs(coords):
 
     # find min/max lat and long
     coords = np.array(coords)
-    #coords[:,0] *= -1 # for testing southern hemisphere
     min_lat = min(coords[:,0])
     max_lat = max(coords[:,0])
     min_long = min(coords[:,1]) 
