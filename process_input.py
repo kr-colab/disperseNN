@@ -30,7 +30,7 @@ def project_locs(coords):
     sampling_width = max([y_range,x_range])
 
     # rescale locs to (0,1)
-    coords[:, 0] = (coords[:, 0] - min_lat) / lat_range # use latitudinal range, here.
+    coords[:, 0] = (coords[:, 0] - min_lat)  / lat_range # use latitudinal range, here.
     coords[:, 1] = (coords[:, 1] - min_long) / long_range
 
     # restore aspect ratio
@@ -41,7 +41,7 @@ def project_locs(coords):
     coords = coords.T
 
     return coords, sampling_width
-        
+
     ##### Alternatively: try to correct longitudinal stretch continuously #####
     # # set bottom left corner of sampling window
     # corner_bl = [min_lat, min_long]
