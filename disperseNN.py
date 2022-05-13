@@ -460,7 +460,7 @@ def prep_preprocessed_and_train():
 
 
 def prep_empirical_and_pred(meanSig, sdSig):
-    # project and rescale locs
+    # project locs
     locs = read_locs(args.empirical + ".locs")
     locs, sampling_width = project_locs(locs)
     locs = pad_locs(locs, args.max_n)

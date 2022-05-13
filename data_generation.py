@@ -7,7 +7,6 @@ import msprime
 import pyslim
 import multiprocessing
 import warnings
-from process_input import rescale_locs
 from attrs import define,field
 
 @define
@@ -228,7 +227,21 @@ class DataGenerator(tf.keras.utils.Sequence):
                 locs0.append(loc)
 
         # rescale locs
-        locs0,sample_width = rescale_locs(locs0)
+        locs0 = np.array(locs0)
+        minx = min(locs0[:, 0])
+        maxx = max(locs0[:, 0])
+        miny = min(locs0[:, 1])
+        maxy = max(locs0[:, 1])
+        x_range = maxx - minx
+        y_range = maxy - miny
+        sampling_width = max(x_range, y_range)
+        locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)      
+        locs0[:, 1] = (locs0[:, 1] - miny) / y_range
+        if   x_range > y_range: # these four lines for preserving aspect ratio
+            locs0[:, 1] *= y_range / x_range
+        elif x_range < y_range:
+            locs0[:, 0] *= x_range / y_range
+        locs0 = locs0.T
             
         # stuff locs into sparse array
         locs = np.zeros((2, self.max_n))

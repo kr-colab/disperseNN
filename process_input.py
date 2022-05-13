@@ -15,12 +15,13 @@ def project_locs(coords):
     max_lat = max(coords[:,0])
     min_long = min(coords[:,1]) 
     max_long = max(coords[:,1])
+    lat_range = max_lat - min_lat # latitudinal range
+    long_range = max_long - min_long
 
-            ########### do we need this anymore?
-    # # quick check to make sure the samples don't span over 180 degress
-    # if abs(max_lat-min_lat) > 180 or abs(max_long-min_long) > 180:
-    #     print("samples coords span over 180 degrees lat or long; the code isn't ready to deal with that")
-    #     exit()
+    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian
+    if abs(lat_range) > 180 or abs(long_range) > 180:
+        print("samples coords span over 180 degrees or 180th meridian; the code isn't ready to deal with that")
+        exit()
 
     # find a good width for the sampling window
     distA = distance.distance([min_lat,min_long], [max_lat,min_long]).km # confirmed ellipsoid='WGS-84' by default
@@ -31,21 +32,16 @@ def project_locs(coords):
     x_range = max(distC,distD)
     sampling_width = max([y_range,x_range])
 
-    # rescale locs
-    lat_range = max_lat - min_lat # latitudinal range
-    long_range = max_long - min_long    
-    coords[:, 0] = (coords[:, 0] - min_lat) / lat_range # rescale to (0,1) 
+    # rescale locs to (0,1)
+    coords[:, 0] = (coords[:, 0] - min_lat) / lat_range # use latitudinal range, here.
     coords[:, 1] = (coords[:, 1] - min_long) / long_range
 
     # restore aspect ratio
-    if   x_range > y_range: # Note: using the geodesics, here.
+    if   x_range > y_range: # use km range, here.
         coords[:, 0] *= y_range / x_range 
     elif x_range < y_range:
         coords[:, 1] *= x_range / y_range
-
-    # quick reshape 
-    locs0 = locs0.T
-    sampling_width = np.array(sampling_width)
+    coords = coords.T
 
     return coords, sampling_width
         
@@ -94,26 +90,6 @@ def project_locs(coords):
     # projection = projection.T
     # return projection
     ##########################################################################
-
-# rescale locs
-def rescale_locs(locs):
-    locs0 = np.array(locs)
-    minx = min(locs0[:, 0])
-    maxx = max(locs0[:, 0])
-    miny = min(locs0[:, 1])
-    maxy = max(locs0[:, 1])
-    x_range = maxx - minx
-    y_range = maxy - miny
-    sampling_width = max(x_range, y_range)
-    locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)
-    locs0[:, 1] = (locs0[:, 1] - miny) / y_range
-    if   x_range > y_range: # these four lines for preserving aspect ratio
-        locs0[:, 1] *= y_range / x_range
-    elif x_range < y_range:
-        locs0[:, 0] *= x_range / y_range
-    locs0 = locs0.T
-    sampling_width = np.array(sampling_width)
-    return locs0, sampling_width
 
 
 # pad locations with zeros
