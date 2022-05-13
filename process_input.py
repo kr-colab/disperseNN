@@ -6,72 +6,94 @@ from geopy import distance
 
 
 # project locations from ellipsoid (lat,long) to square map (km)
-def project_locs(coords,precision):
+def project_locs(coords):
 
     # find min/max lat and long
     coords = np.array(coords)
     #coords[:,0] *= -1 # for testing southern hemisphere
     min_lat = min(coords[:,0])
     max_lat = max(coords[:,0])
-    min_long = min(coords[:,1])
+    min_long = min(coords[:,1]) 
     max_long = max(coords[:,1])
 
-    # quick check to make sure the samples don't span over 180 degress
-    if abs(max_lat-min_lat) > 180 or abs(max_long-min_long) > 180:
-        print("samples coords span over 180 degrees lat or long; the code isn't ready to deal with that")
-        exit()
+            ########### do we need this anymore?
+    # # quick check to make sure the samples don't span over 180 degress
+    # if abs(max_lat-min_lat) > 180 or abs(max_long-min_long) > 180:
+    #     print("samples coords span over 180 degrees lat or long; the code isn't ready to deal with that")
+    #     exit()
 
     # find a good width for the sampling window
-    lat1 = distance.distance([min_lat,min_long], [max_lat,min_long]).km # confirmed ellipsoid='WGS-84' by default
-    lat2 = distance.distance([min_lat,max_long], [max_lat,max_long]).km
-    long1 = distance.distance([min_lat,min_long], [min_lat,max_long]).km
-    long2 = distance.distance([max_lat,min_long], [max_lat,max_long]).km
-    S = max([lat1,lat2,long1,long2])
+    distA = distance.distance([min_lat,min_long], [max_lat,min_long]).km # confirmed ellipsoid='WGS-84' by default
+    distB = distance.distance([min_lat,max_long], [max_lat,max_long]).km
+    y_range = max(distA,distB) # range in km
+    distC = distance.distance([min_lat,min_long], [min_lat,max_long]).km
+    distD = distance.distance([max_lat,min_long], [max_lat,max_long]).km
+    x_range = max(distC,distD)
+    sampling_width = max([y_range,x_range])
 
-    # set bottom left corner of sampling window
-    corner_bl = [min_lat, min_long]
+    # rescale locs
+    lat_range = max_lat - min_lat # latitudinal range
+    long_range = max_long - min_long    
+    coords[:, 0] = (coords[:, 0] - min_lat) / lat_range # rescale to (0,1) 
+    coords[:, 1] = (coords[:, 1] - min_long) / long_range
 
-    # bottom right corner: draw line S distance, same lat
-    corner_br = list(corner_bl) # starting on top of the bottom left point
-    dist_bottom = 0
-    while dist_bottom < S:
-        corner_br[1] += precision
-        dist_bottom = distance.distance(corner_bl, corner_br).km
+    # restore aspect ratio
+    if   x_range > y_range: # Note: using the geodesics, here.
+        coords[:, 0] *= y_range / x_range 
+    elif x_range < y_range:
+        coords[:, 1] *= x_range / y_range
 
-    # top corners: draw both sides simultaneously
-    b=0
-    corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=0))[0:2] # third val is altitude 
-    corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=0))[0:2]
-    dist_top = distance.distance(corner_tl, corner_tr).km
-    if (dist_bottom - dist_top) > 0: # e.g. northern hemisphere
-        while dist_top < S:
-            b += precision
-            corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=-b))[0:2]
-            corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=b))[0:2]
-            dist_top = distance.distance(corner_tl, corner_tr).km
-    else: # e.g. southern hemisphere
-        while dist_top > S:
-            b += precision
-            corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=b))[0:2]
-            corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=-b))[0:2]
-            dist_top = distance.distance(corner_tl, corner_tr).km
+    # quick reshape 
+    locs0 = locs0.T
+    sampling_width = np.array(sampling_width)
 
-    # finally, get individual locs
-    from_bottom = abs(coords[:,0] - corner_bl[0])
-    from_top = abs(coords[:,0] - corner_tl[0])
-    total_y = from_bottom + from_top
-    relative_y = (from_bottom / total_y)
-    longitudinal_stretch = abs(corner_bl[1]-corner_tl[1])
-    from_left = abs(coords[:,1] - (corner_bl[1]-(longitudinal_stretch*relative_y)))
-    from_right = abs(coords[:,1] - (corner_br[1]+(longitudinal_stretch*relative_y)))
-    total_x = from_left + from_right
-    relative_x = (from_left / total_x)
-    projection = [relative_x*S, relative_y*S]
-    projection = np.array(projection)
-    projection = projection.T
-    
-    return projection
+    return coords, sampling_width
+        
+    ##### Alternatively: try to correct longitudinal stretch continuously #####
+    # # set bottom left corner of sampling window
+    # corner_bl = [min_lat, min_long]
 
+    # # bottom right corner: draw line S distance, same lat
+    # corner_br = list(corner_bl) # starting on top of the bottom left point
+    # dist_bottom = 0
+    # precision = 0.00001
+    # while dist_bottom < S:
+    #     corner_br[1] += precision
+    #     dist_bottom = distance.distance(corner_bl, corner_br).km
+
+    # # top corners: draw both sides simultaneously
+    # b=0
+    # corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=0))[0:2] # third val is altitude 
+    # corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=0))[0:2]
+    # dist_top = distance.distance(corner_tl, corner_tr).km
+    # if (dist_bottom - dist_top) > 0: # e.g. northern hemisphere
+    #     while dist_top < S:
+    #         b += precision
+    #         corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=-b))[0:2]
+    #         corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=b))[0:2]
+    #         dist_top = distance.distance(corner_tl, corner_tr).km
+    # else: # e.g. southern hemisphere
+    #     while dist_top > S:
+    #         b += precision
+    #         corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=b))[0:2]
+    #         corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=-b))[0:2]
+    #         dist_top = distance.distance(corner_tl, corner_tr).km
+
+    # # finally, get individual locs
+    # from_bottom = abs(coords[:,0] - corner_bl[0])
+    # from_top = abs(coords[:,0] - corner_tl[0])
+    # total_y = from_bottom + from_top
+    # relative_y = (from_bottom / total_y)
+    # longitudinal_stretch = abs(corner_bl[1]-corner_tl[1]) 
+    # from_left = abs(coords[:,1] - (corner_bl[1]-(longitudinal_stretch*relative_y)))
+    # from_right = abs(coords[:,1] - (corner_br[1]+(longitudinal_stretch*relative_y)))
+    # total_x = from_left + from_right
+    # relative_x = (from_left / total_x)
+    # projection = [relative_x*S, relative_y*S]
+    # projection = np.array(projection)
+    # projection = projection.T
+    # return projection
+    ##########################################################################
 
 # rescale locs
 def rescale_locs(locs):
@@ -82,16 +104,16 @@ def rescale_locs(locs):
     maxy = max(locs0[:, 1])
     x_range = maxx - minx
     y_range = maxy - miny
-    sample_width = max(x_range, y_range)
+    sampling_width = max(x_range, y_range)
     locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)
     locs0[:, 1] = (locs0[:, 1] - miny) / y_range
-    if x_range > y_range:  # these four lines for preserving aspect ratio
+    if   x_range > y_range: # these four lines for preserving aspect ratio
         locs0[:, 1] *= y_range / x_range
-    elif y_range > x_range:
+    elif x_range < y_range:
         locs0[:, 0] *= x_range / y_range
     locs0 = locs0.T
-    sample_width = np.array(sample_width)
-    return locs0, sample_width
+    sampling_width = np.array(sampling_width)
+    return locs0, sampling_width
 
 
 # pad locations with zeros
