@@ -78,14 +78,29 @@ early() {
            sim.simulationFinished();
         }
         else{
-		if (sim.generation == maxgens){
-                   sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
-                   catn("Done.");
-                   sim.simulationFinished();
-                }
+		if (sim.generation == 100){
+		    sim.treeSeqOutput(paste(c(OUTNAME,"_100gens_",SEED,".trees"), sep=""));
+		    }
+		else if (sim.generation == 1000){
+		    sim.treeSeqOutput(paste(c(OUTNAME,"_1000gens_",SEED,".trees"), sep=""));
+		    }
+                else if (sim.generation == 10000){
+		    sim.treeSeqOutput(paste(c(OUTNAME,"_10000gens_",SEED,".trees"), sep=""));
+		    }
+		else if (sim.generation == 100000){
+		    sim.treeSeqOutput(paste(c(OUTNAME,"_100000gens_",SEED,".trees"), sep=""));
+		    catn("Done.");	    
+		    sim.simulationFinished();
+		    }
+	     }
+		// if (sim.generation == maxgens){
+                //    sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
+                //    catn("Done.");
+                //    sim.simulationFinished();
+                // }
         }
-}
 
 
 999999999 late() {} // jerry-rig. I haven't taken the time to figure out how to avoid this.
+
 

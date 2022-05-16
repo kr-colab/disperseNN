@@ -63,7 +63,7 @@ for line in vcf:
                 except:
                     indel = True
 
-        ### check genotype field identifiers: pretty wonky in some cases
+        ### check genotype field identifiers (pretty wonky in some cases)
         identifiers = currentline[8].split(":")
         try:
             GT_index = identifiers.index("GT")
@@ -92,7 +92,7 @@ for line in vcf:
                     currentline[sample] = "./.:0,0,0:0:0"
                     DP = 0
 
-                ### getting rid of phased bar ("|") for consistency across datasets
+                ### getting rid of phased bar ("|") so subsequent steps don't need to deal with it
                 all_geno_fields = currentline[sample].split(":")
                 genotype = str(all_geno_fields[GT_index])
                 if "|" in genotype:
@@ -140,7 +140,7 @@ for line in vcf:
 
             ### figure out major/minor alleles
             else:
-                anc, der = list(set(ac))  # set() gives random order
+                anc, der = list(set(ac))  # set() gives random order 
                 if ac[anc] < ac[der]:
                     anc, der = der, anc
                 anc = str(anc)
@@ -173,7 +173,7 @@ for line in vcf:
                 if represented < min_sample_prop:
                     pass
 
-                ### filter: bi-allelic
+                ### output
                 else:
                     outline = currentline[0:9] + out_genos
                     filtered_vcf.write(("\t".join(outline) + "\n").encode("utf-8"))
