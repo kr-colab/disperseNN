@@ -10,7 +10,6 @@ def project_locs(coords):
 
     # find min/max lat and long
     coords = np.array(coords)
-    #coords[:,0] *= -1 # for testing southern hemisphere
     min_lat = min(coords[:,0])
     max_lat = max(coords[:,0])
     min_long = min(coords[:,1]) 
@@ -23,17 +22,15 @@ def project_locs(coords):
         print("samples coords span over 180 degrees or 180th meridian; the code isn't ready to deal with that")
         exit()
 
-    # find a good width for the sampling window
-    distA = distance.distance([min_lat,min_long], [max_lat,min_long]).km # confirmed ellipsoid='WGS-84' by default
-    distB = distance.distance([min_lat,max_long], [max_lat,max_long]).km
-    y_range = max(distA,distB) # range in km
-    distC = distance.distance([min_lat,min_long], [min_lat,max_long]).km
-    distD = distance.distance([max_lat,min_long], [max_lat,max_long]).km
-    x_range = max(distC,distD)
+    # find a good width (km) for the sampling window
+    y_range = distance.distance([min_lat,min_long], [max_lat,min_long]).km # ellipsoid='WGS-84' by default
+    distA = distance.distance([min_lat,min_long], [min_lat,max_long]).km # longitudinal range is function of latitude
+    distB = distance.distance([max_lat,min_long], [max_lat,max_long]).km
+    x_range = max(distA,distB)
     sampling_width = max([y_range,x_range])
 
     # rescale locs to (0,1)
-    coords[:, 0] = (coords[:, 0] - min_lat) / lat_range # use latitudinal range, here.
+    coords[:, 0] = (coords[:, 0] - min_lat)  / lat_range # use latitudinal range, here.
     coords[:, 1] = (coords[:, 1] - min_long) / long_range
 
     # restore aspect ratio
@@ -44,7 +41,7 @@ def project_locs(coords):
     coords = coords.T
 
     return coords, sampling_width
-        
+
     ##### Alternatively: try to correct longitudinal stretch continuously #####
     # # set bottom left corner of sampling window
     # corner_bl = [min_lat, min_long]
