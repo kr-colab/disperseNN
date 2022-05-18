@@ -473,7 +473,7 @@ def prep_empirical_and_pred(meanSig, sdSig):
 
     # convert vcf to geno matrix
     for i in range(args.num_pred):
-        test_genos, test_pos = vcf2genos(
+        test_genos, test_pos, max_pos = vcf2genos(
             args.empirical + ".vcf", args.max_n, args.num_snps, args.phase
         )
         test_genos = np.reshape(

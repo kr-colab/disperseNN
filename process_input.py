@@ -139,8 +139,7 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
             else:
                 current_chrom = str(chrom)
                 output_pos += 10000  # skipping 10kb between chroms/scaffolds (also skipping 10kb before first snp, currently)
-                previous_pos = 0 
-                output_pos += (pos-previous_pos)
+                output_pos += pos
             previous_pos = int(pos) 
             pos_list.append(output_pos)
 
@@ -161,9 +160,9 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
     pos_list = pos_list[mask]
 
     # rescale positions
-    pos_list = pos_list / (max(pos_list) + 1)  # +1 to avoid prop=1.0
+    pos_list = pos_list / (pos_list[-1] + 1)  # +1 to avoid prop=1.0
 
-    return geno_mat, pos_list
+    return geno_mat, pos_list, output_pos
 
 
 ### main
@@ -173,7 +172,7 @@ def main():
     num_snps = int(sys.argv[3])
     outname = sys.argv[4]
     phase = int(sys.argv[5])
-    geno_mat, pos_list = vcf2genos(vcf_path, max_n, num_snps, phase)
+    geno_mat, pos_list, max_pos = vcf2genos(vcf_path, max_n, num_snps, phase)
     np.save(outname + ".genos", geno_mat)
     np.save(outname + ".pos", pos_list)
 
