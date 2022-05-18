@@ -104,11 +104,16 @@ def pad_locs(locs, max_n):
 def vcf2genos(vcf_path, max_n, num_snps, phase):
     geno_mat, pos_list = [], []
     vcf = open(vcf_path, "r")
-    current_chrom = "XX"
-    baseline_pos = 0
-    previous_pos = 0
+    current_chrom = None
+    previous_pos,output_pos = 0,0
     for line in vcf:
-        if line[0] != "#":
+        if line[0:2] == "##":
+            pass
+        elif line[0] == "#":
+            header = line.strip().split("\t")
+            if max_n == None: # option for getting sample size from vcf
+                max_n = len(header)-9
+        else:
             newline = line.strip().split("\t")
             genos = []
             for field in range(9, len(newline)):
@@ -117,7 +122,6 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
                 if phase == 1:
                     genos.append(sum(geno)) 
                 elif phase == 2:
-                    geno = [min(geno), max(geno)]
                     genos.append(geno[0])
                     genos.append(geno[1])
                 else:
@@ -131,14 +135,14 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
             chrom = newline[0]
             pos = int(newline[1])
             if chrom == current_chrom:
-                previous_pos = int(pos)
+                output_pos += (pos-previous_pos)
             else:
                 current_chrom = str(chrom)
-                baseline_pos = (
-                    int(previous_pos) + 10000
-                )  # skipping 10kb between chroms/scaffolds (also skipping 10kb before first snp, currently)
-            current_pos = baseline_pos + pos
-            pos_list.append(current_pos)
+                output_pos += 10000  # skipping 10kb between chroms/scaffolds (also skipping 10kb before first snp, currently)
+                previous_pos = 0 
+                output_pos += (pos-previous_pos)
+            previous_pos = int(pos) 
+            pos_list.append(output_pos)
 
     # check if enough snps
     if len(geno_mat) < num_snps:

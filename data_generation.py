@@ -137,10 +137,11 @@ class DataGenerator(tf.keras.utils.Sequence):
         for i in ts.individuals():
             alive_inds.append(i.id)
         if self.recapitate == "True":
-            N = len(alive_inds)
+            Ne = len(alive_inds)
             ts = pyslim.recapitate(
-                ts, recombination_rate=self.rho, ancestral_Ne=N, random_seed=seed
+                ts, recombination_rate=self.rho, ancestral_Ne=Ne, random_seed=seed
             )
+
 
         # crop map
         if self.sampling_width != None:
