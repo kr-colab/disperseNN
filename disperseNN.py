@@ -607,29 +607,30 @@ def prep_trees_and_pred(meanSig, sdSig):
     return
 
 
-def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
+def unpack_predictions(predictions, meanSig, sdSig, targets, datasets, out_file = f"{args.out}_sigma_predictions.txt"):
     squared_log_errors = []
     squared_errors = []
-    if args.empirical == None:
-        for i in range(len(predictions)):
-            trueval = float(targets[i])
-            prediction = predictions[i][0]
+    with open(out_file, "w") as out_f:
+        if args.empirical == None:
+            for i in range(len(predictions)):
+                trueval = float(targets[i])
+                prediction = predictions[i][0]
+                prediction = (prediction * sdSig) + meanSig
+                error = (trueval - prediction) ** 2
+                squared_log_errors.append(error)
+                trueval = np.exp(trueval)
+                prediction = np.exp(prediction)
+                error = (trueval - prediction) ** 2
+                squared_errors.append(error)
+                print(datasets[i], np.round(trueval, 10), np.round(prediction, 10), file = out_f)
+            print("RMSLE:", np.mean(squared_log_errors) ** (1 / 2), file = out_f)
+            print("RMSE:", np.mean(squared_errors) ** (1 / 2), file = out_f)
+        else:
+            prediction = predictions[0][0]
             prediction = (prediction * sdSig) + meanSig
-            error = (trueval - prediction) ** 2
-            squared_log_errors.append(error)
-            trueval = np.exp(trueval)
             prediction = np.exp(prediction)
-            error = (trueval - prediction) ** 2
-            squared_errors.append(error)
-            print(datasets[i], np.round(trueval, 10), np.round(prediction, 10))
-        print("RMSLE:", np.mean(squared_log_errors) ** (1 / 2))
-        print("RMSE:", np.mean(squared_errors) ** (1 / 2))
-    else:
-        prediction = predictions[0][0]
-        prediction = (prediction * sdSig) + meanSig
-        prediction = np.exp(prediction)
-        prediction = np.round(prediction, 10)
-        print(datasets, prediction)
+            prediction = np.round(prediction, 10)
+            print(datasets, prediction, file = out_f)
 
     return
 
