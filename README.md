@@ -31,7 +31,7 @@ cd disperseNN/
 Dependencies can be installed with:
 
 ```bash
-pip install -r requirements.txt 
+pip install -r requirements.txt
 ```
 
 You will also need to install SLiM v3.7, in order to run sims and to follow along in the below Vignette.
@@ -374,7 +374,7 @@ python ../disperseNN/disperseNN.py \
   --train \
   --min_n 14 \
   --max_n 14 \
-  --num_snps 100 \
+  --num_snps 1000 \
   --genome_length 100000000 \
   --recapitate False \
   --mutate True \
@@ -408,7 +408,7 @@ python ../disperseNN/disperseNN.py \
   --predict \
   --min_n 14 \
   --max_n 14 \
-  --num_snps 100 \
+  --num_snps 1000 \
   --genome_length 100000000 \
   --recapitate False \
   --mutate True \
