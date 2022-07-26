@@ -471,6 +471,11 @@ def prep_empirical_and_pred(meanSig, sdSig):
     load_modules()
     model, checkpointer, earlystop, reducelr = load_network()
 
+    #since outfile must be appended to in loop, delete old one first
+    out_file = f"{args.out}_sigma_predictions.txt"
+    if os.path.exists(out_file):
+        os.remove(out_file)
+    
     # convert vcf to geno matrix
     for i in range(args.num_pred):
         test_genos, test_pos, max_pos = vcf2genos(
@@ -482,7 +487,7 @@ def prep_empirical_and_pred(meanSig, sdSig):
         test_pos = np.reshape(test_pos, (1, test_pos.shape[0]))
         dataset = args.empirical + "_" + str(i)
         prediction = model.predict([test_genos, test_pos, locs, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, dataset)
+        unpack_predictions(prediction, meanSig, sdSig, None, dataset, out_file, "a+")
 
     return
 
@@ -503,6 +508,11 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
     load_modules()
     model, checkpointer, earlystop, reducelr = load_network()
 
+    #since outfile must be appended to in loop, delete old one first
+    out_file = f"{args.out}_sigma_predictions.txt"
+    if os.path.exists(out_file):
+        os.remove(out_file)
+    
     # predict
     print("predicting")
     for i in range(len(datasets)):
@@ -513,7 +523,7 @@ def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
         )
         test_pos = np.reshape(test_pos, (1, test_pos.shape[0]))
         prediction = model.predict([test_genos, test_pos, locs, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, datasets[i])
+        unpack_predictions(prediction, meanSig, sdSig, None, datasets[i], out_file, "a+")
 
     return
 
@@ -553,7 +563,7 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, simids)
+    unpack_predictions(predictions, meanSig, sdSig, targets, simids, mode = "w")
 
     return
 
@@ -602,34 +612,35 @@ def prep_trees_and_pred(meanSig, sdSig):
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, trees)
+    unpack_predictions(predictions, meanSig, sdSig, targets, trees, mode = "w")
 
     return
 
 
-def unpack_predictions(predictions, meanSig, sdSig, targets, datasets):
+def unpack_predictions(predictions, meanSig, sdSig, targets, datasets, out_file = f"{args.out}_sigma_predictions.txt", mode = "a+"):
     squared_log_errors = []
     squared_errors = []
-    if args.empirical == None:
-        for i in range(len(predictions)):
-            trueval = float(targets[i])
-            prediction = predictions[i][0]
+    with open(out_file, mode) as out_f:
+        if args.empirical == None:
+            for i in range(len(predictions)):
+                trueval = float(targets[i])
+                prediction = predictions[i][0]
+                prediction = (prediction * sdSig) + meanSig
+                error = (trueval - prediction) ** 2
+                squared_log_errors.append(error)
+                trueval = np.exp(trueval)
+                prediction = np.exp(prediction)
+                error = (trueval - prediction) ** 2
+                squared_errors.append(error)
+                print(datasets[i], np.round(trueval, 10), np.round(prediction, 10), file = out_f)
+            print("RMSLE:", np.mean(squared_log_errors) ** (1 / 2), file = out_f)
+            print("RMSE:", np.mean(squared_errors) ** (1 / 2), file = out_f)
+        else:
+            prediction = predictions[0][0]
             prediction = (prediction * sdSig) + meanSig
-            error = (trueval - prediction) ** 2
-            squared_log_errors.append(error)
-            trueval = np.exp(trueval)
             prediction = np.exp(prediction)
-            error = (trueval - prediction) ** 2
-            squared_errors.append(error)
-            print(datasets[i], np.round(trueval, 10), np.round(prediction, 10))
-        print("RMSLE:", np.mean(squared_log_errors) ** (1 / 2))
-        print("RMSE:", np.mean(squared_errors) ** (1 / 2))
-    else:
-        prediction = predictions[0][0]
-        prediction = (prediction * sdSig) + meanSig
-        prediction = np.exp(prediction)
-        prediction = np.round(prediction, 10)
-        print(datasets, prediction)
+            prediction = np.round(prediction, 10)
+            print(datasets, prediction, file = out_f)
 
     return
 
