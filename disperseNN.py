@@ -161,8 +161,6 @@ parser.add_argument(
 )
 parser.add_argument("--samplewidth_list", help="", default=None)
 parser.add_argument("--geno_list", help="", default=None)
-parser.add_argument("--pos_list", help="", default=None)
-parser.add_argument("--loc_list", help="", default=None)
 parser.add_argument(
     "--training_mean", help="mean sigma from training", default=None, type=float
 )
@@ -357,8 +355,6 @@ def prep_trees_and_train():
         edges=edges,
         shuffle=True,
         genos=None,
-        poss=None,
-        locs=None,
         sample_widths=None,
     )
     training_generator = DataGenerator(partition["train"], **params)
@@ -474,9 +470,8 @@ def prep_empirical_and_pred(meanSig, sdSig):
         test_genos = np.reshape(
             test_genos, (1, test_genos.shape[0], test_genos.shape[1])
         )
-        test_pos = np.reshape(test_pos, (1, test_pos.shape[0]))
         dataset = args.empirical + "_" + str(i)
-        prediction = model.predict([test_genos, test_pos, locs, sampling_width])
+        prediction = model.predict([test_genos, sampling_width])
         unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset, out_file, "a+") # *** (needs work)
 
     return
@@ -577,14 +572,14 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets, o
                 prediction = np.exp(prediction)
                 error = abs( (trueval - prediction) / trueval )
                 raes.append(error)
-                print(datasets[i], np.round(trueval, 10), np.round(prediction, 10), file = out_f)
-            print("mean RAE:", np.mean(raes), file = out_f)
+                print(datasets[i], np.round(trueval, 10), np.round(prediction, 10))#, file = out_f)
+            print("mean RAE:", np.mean(raes))#, file = out_f)
         else:
             prediction = predictions[0][0]
             prediction = (prediction * sdSig) + meanSig
             prediction = np.exp(prediction)
             prediction = np.round(prediction, 10)
-            print(datasets, prediction, file = out_f)
+            print(datasets, prediction)#, file = out_f)
 
     return
 
