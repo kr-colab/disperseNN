@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 import msprime
-import pyslim
+import tskit
 import multiprocessing
 import warnings
 from attrs import define,field
@@ -37,8 +37,6 @@ class DataGenerator(tf.keras.utils.Sequence):
     polarize: int
     sample_widths: dict
     genos: dict
-    poss: dict
-    locs: dict
     preprocessed: bool
 
     def __attrs_post_init__(self):
@@ -126,10 +124,11 @@ class DataGenerator(tf.keras.utils.Sequence):
     def sample_ts(self, filepath, W, edge_width, seed):
         "The meat: load in and fully process a tree sequence"
         
-        # read input
-        # print(filepath)
-        # sys.stdout.flush()
-        ts = pyslim.load(filepath)
+        # read input                        
+        print(filepath, W, edge_width, seed)
+        sys.stdout.flush()
+        #ts = pyslim.load(filepath)         
+        ts = tskit.load(filepath)
         np.random.seed(seed)
 
         # recapitate
@@ -142,7 +141,6 @@ class DataGenerator(tf.keras.utils.Sequence):
                 ts, recombination_rate=self.rho, ancestral_Ne=Ne, random_seed=seed
             )
 
-
         # crop map
         if self.sampling_width != None:
             sample_width = (float(self.sampling_width) * W) - (edge_width * 2)
@@ -150,7 +148,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             sample_width = np.random.uniform(
                 0, W - (edge_width * 2)
             )  # maybe change to log-U once you have plenty of big maps, W>100
-            ### for Job145 only
+            ### for misspecification analysis only
             # sample_width = np.random.uniform(0,40)
             # sample_width = np.random.uniform(40,W-(edge_width*2))
             ###
@@ -166,7 +164,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 sample_width = (float(self.sampling_width) * W) - (edge_width * 2)
             else:
                 sample_width = np.random.uniform(0, W - (edge_width * 2))
-                ### for Job145 only
+                ### for misspecification analysis only
                 # sample_width = np.random.uniform(0,40)
                 # sample_width = np.random.uniform(40,W-(edge_width*2))
                 ###
@@ -188,6 +186,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             keep_nodes.extend(ind.nodes)
 
         # simplify
+        sys.stdout.flush()
         ts = ts.simplify(keep_nodes)
 
         # mutate
@@ -218,39 +217,26 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # grab spatial locations
         sample_dict = {}
-        locs0 = []
+        locs = []
         for samp in ts.samples():
             node = ts.node(samp)
             indID = node.individual
             if indID not in sample_dict:
                 sample_dict[indID] = 0
                 loc = ts.individual(indID).location[0:2]
-                locs0.append(loc)
+                locs.append(loc)
 
-        # rescale locs
-        locs0 = np.array(locs0)
-        minx = min(locs0[:, 0])
-        maxx = max(locs0[:, 0])
-        miny = min(locs0[:, 1])
-        maxy = max(locs0[:, 1])
-        x_range = maxx - minx
-        y_range = maxy - miny
-        sampling_width = max(x_range, y_range)
-        locs0[:, 0] = (locs0[:, 0] - minx) / x_range  # rescale to (0,1)      
-        locs0[:, 1] = (locs0[:, 1] - miny) / y_range
-        if   x_range > y_range: # these four lines for preserving aspect ratio
-            locs0[:, 1] *= y_range / x_range
-        elif x_range < y_range:
-            locs0[:, 0] *= x_range / y_range
-        locs0 = locs0.T
-            
-        # stuff locs into sparse array
-        locs = np.zeros((2, self.max_n))
-        locs[:, 0:n] = locs0
+        # find width of sampling area                                             
+        locs = np.array(locs)
+        sampling_width = 0
+        for i in range(0,n-1):
+            for j in range(i+1,n):
+                d = ( (locs[i,0]-locs[j,0])**2 + (locs[i,1]-locs[j,1])**2 )**(1/2)
+                if d > sampling_width:
+                    sampling_width = float(d)
         
-        # grab genos and positions
+        # grab genos
         geno_mat0 = ts.genotype_matrix()
-        pos_list0 = ts.tables.sites.position
 
         # change 0,1 encoding to major/minor allele  
         if self.polarize == 2:
@@ -273,22 +259,18 @@ class DataGenerator(tf.keras.utils.Sequence):
                     snp_index_map[shuffled_indices[s]] = int(snp_counter)
                     snp_counter += 1
             geno_mat0 = [] 
-            pos_list1 = []
             sorted_indices = list(snp_index_map) 
             sorted_indices.sort() 
             for snp in range(self.num_snps):
                 #print("current snp iteration:", snp, "\tindex from ts.genotype_matrix:", sorted_indices[snp], "\tindex in our filtered geno_mat", snp_index_map[sorted_indices[snp]])
                 geno_mat0.append(geno_mat1[snp_index_map[sorted_indices[snp]]])
-                pos_list1.append(pos_list0[sorted_indices[snp]]) # (doesn't need map)
             geno_mat0 = np.array(geno_mat0)
-            pos_list1 = np.array(pos_list1)
                                                 
         # sample SNPs
         else:
             mask = [True] * self.num_snps + [False] * (ts.num_sites - self.num_snps)
             np.random.shuffle(mask)
             geno_mat0 = geno_mat0[mask, :]
-            pos_list1 = pos_list0[mask] # (new variable, to stay consistent with above if-block)
 
         # collapse genotypes, change to minor allele dosage (e.g. 0,1,2)
         if self.phase == 1:
@@ -302,20 +284,15 @@ class DataGenerator(tf.keras.utils.Sequence):
         geno_mat1 = np.zeros((self.num_snps, self.max_n * self.phase))
         geno_mat1[:, 0 : n * self.phase] = geno_mat0
 
-        # rescale genomic positions by genome length
-        pos_list1 = pos_list1 / self.genome_length
+        return geno_mat1, sample_width
 
-        return geno_mat1, pos_list1, locs, sample_width
-
-    def preprocess_sample_ts(self, geno_path, pos_path, loc_path):
+    def preprocess_sample_ts(self, geno_path): ### *** un-modularize this, now
         "Seperate function for loading in pre-processed data"
         
         # read input
         geno_mat = np.load(geno_path)
-        pos_list = np.load(pos_path)
-        locs = np.load(loc_path)
 
-        return geno_mat, pos_list, locs
+        return geno_mat
 
     def __data_generation(self, list_IDs_temp):
         "Generates data containing batch_size samples"
@@ -324,9 +301,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         X1 = np.empty(
             (self.batch_size, self.num_snps, self.max_n * self.phase), dtype="int8"
         )  # genos
-        X2 = np.empty((self.batch_size, self.num_snps))  # positions
-        X3 = np.empty((self.batch_size, 2, self.max_n))  # locs
-        X4 = np.empty((self.batch_size,))  # sample widths
+        X2 = np.empty((self.batch_size,))  # sample widths
         y = np.empty((self.batch_size), dtype=float)  # targets (sigma)
 
         if self.preprocessed == False:
@@ -343,7 +318,6 @@ class DataGenerator(tf.keras.utils.Sequence):
                     width_list.append(self.widths[ID])
                 edge_list.append(self.edges[ID])
             seeds = np.random.randint(1e9, size=(self.batch_size))
-
             pool = multiprocessing.Pool(self.threads, maxtasksperchild=1)
             batch = pool.starmap(
                 self.sample_ts, zip(ts_list, width_list, edge_list, seeds)
@@ -352,31 +326,14 @@ class DataGenerator(tf.keras.utils.Sequence):
             # unpack the multiprocess output
             for i in range(len(batch)):
                 X1[i, :] = batch[i][0]
-                X2[i, :] = batch[i][1]
-                X3[i, :] = batch[i][2]
-                X4[i] = batch[i][3]
-            X = [X1, X2, X3, X4]
+                X2[i] = batch[i][1]
+            X = [X1, X2]
 
         else:
-            geno_list = []
-            pos_list = []
-            loc_list = []
             for i, ID in enumerate(list_IDs_temp):
                 y[i] = self.targets[ID]
-                X4[i] = self.sample_widths[ID]
-                loc_list.append(self.locs[ID])
-                geno_list.append(self.genos[ID])
-                pos_list.append(self.poss[ID])
-            seeds = np.random.randint(1e9, size=(self.batch_size))
-            pool = multiprocessing.Pool(self.threads, maxtasksperchild=1)
-            batch = pool.starmap(
-                self.preprocess_sample_ts, zip(geno_list, pos_list, loc_list)
-            )
-            # unpack the multiprocess output
-            for i in range(len(batch)):
-                X1[i, :] = batch[i][0]
-                X2[i, :] = batch[i][1]
-                X3[i, :] = batch[i][2][0]
-            X = [X1, X2, X3, X4]
+                X2[i] = self.sample_widths[ID]
+                X1[i,:] = self.preprocess_sample_ts(self.genos[ID])
+            X = [X1, X2]
 
         return (X, y)

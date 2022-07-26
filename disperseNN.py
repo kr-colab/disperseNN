@@ -8,13 +8,12 @@ from process_input import *
 from data_generation import DataGenerator
 from sklearn.model_selection import train_test_split
 
-def load_modules():
+def load_dl_modules():
     print("loading bigger modules")
     import numpy as np
     global tf
     import tensorflow as tf
     from tensorflow import keras
-
     return
 
 
@@ -83,21 +82,21 @@ parser.add_argument(
 )
 parser.add_argument(
     "--validation_split",
-    default=0.1,
+    default=0.2,
     type=float,
-    help="0-1, proportion of samples to use for validation. default: 0.1",
+    help="0-1, proportion of samples to use for validation. default: 0.2",
 )
 parser.add_argument("--batch_size", default=1, type=int, help="default: 1")
 parser.add_argument("--max_epochs", default=100, type=int, help="default: 100")
 parser.add_argument(
     "--patience",
     type=int,
-    default=100,
-    help="n epochs to run the optimizer after last improvement in validation loss. default: 100",
+    default=1000,
+    help="n epochs to run the optimizer after last improvement in validation loss.",
 )
 parser.add_argument(
     "--genome_length",
-    default=1000000,
+    default=100000000,
     type=int,
     help="important for rescaling the genomic positions.",
 )
@@ -180,7 +179,7 @@ parser.add_argument(
     "--learning_rate",
     default=1e-3,
     type=float,
-    help="learning rate. Default=1e-3. 1e-4 seems to work well for some things.",
+    help="learning rate.",
 )
 args = parser.parse_args()
 check_params(args)
@@ -193,6 +192,7 @@ def load_network():
         tf.random.set_seed(args.seed)
     if args.gpu_index != 'x': # 'x' will search for any available GPU
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_index
+    tf.config.threading.set_intra_op_parallelism_threads(args.threads)
 
     # update 1dconv+pool iterations based on number of SNPs
     num_conv_iterations = int(len(str(args.num_snps)) - 3)
@@ -213,28 +213,20 @@ def load_network():
             filter_size, kernel_size=conv_kernal_size, activation="relu"
         )(h)
         h = tf.keras.layers.AveragePooling1D(pool_size=pooling_size)(h)
+
     h = tf.keras.layers.Flatten()(h)
     h = tf.keras.layers.Dense(128, activation="relu")(h)
-
-    position_input = tf.keras.layers.Input(shape=(args.num_snps,))
-    m1 = tf.keras.layers.Dense(256, activation="relu")(position_input)
-    h = tf.keras.layers.concatenate([h, m1])
+    h = tf.keras.layers.Dense(128, activation="relu")(h)
     h = tf.keras.layers.Dense(128, activation="relu")(h)
 
-    loc_input = tf.keras.layers.Input(shape=(2, args.max_n))
-    m2 = tf.keras.layers.Dense(64, name="m2_dense1")(loc_input)
-    m2 = tf.keras.layers.Flatten()(m2)
-    h = tf.keras.layers.concatenate([h, m2])
-    h = tf.keras.layers.Dense(128, activation="relu")(h)
-
-    area_input = tf.keras.layers.Input(shape=(1))
-    h = tf.keras.layers.concatenate([h, area_input])
+    width_input = tf.keras.layers.Input(shape=(1))
+    h = tf.keras.layers.concatenate([h, width_input])
     h = tf.keras.layers.Dense(128, activation="relu")(h)
 
     h = tf.keras.layers.Dropout(args.dropout_prop)(h)
     output = tf.keras.layers.Dense(1, activation="linear")(h)
     model = tf.keras.Model(
-        inputs=[geno_input, position_input, loc_input, area_input], outputs=[output]
+        inputs=[geno_input, width_input], outputs=[output]
     )
     opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
     model.compile(loss="mse", optimizer=opt)
@@ -268,7 +260,7 @@ def load_network():
     reducelr = tf.keras.callbacks.ReduceLROnPlateau(
         monitor="val_loss",
         factor=0.5,
-        patience=int(args.patience / 5),
+        patience=int(args.patience/10),
         verbose=args.keras_verbose,
         mode="auto",
         min_delta=0,
@@ -280,7 +272,7 @@ def load_network():
 
 
 def make_generator_params_dict(
-    targets, trees, widths, edges, shuffle, genos, poss, locs, sample_widths
+    targets, trees, widths, edges, shuffle, genos, sample_widths
 ):
     params = {
         "targets": targets,
@@ -306,8 +298,6 @@ def make_generator_params_dict(
         "polarize": args.polarize,
         "sample_widths": sample_widths,
         "genos": genos,
-        "poss": poss,
-        "locs": locs,
         "preprocessed": args.preprocessed,
     }
     return params
@@ -375,7 +365,7 @@ def prep_trees_and_train():
     validation_generator = DataGenerator(partition["validation"], **params)
 
     # train
-    load_modules()
+    load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("training!")
     history = model.fit_generator(
@@ -394,13 +384,11 @@ def prep_preprocessed_and_train():
     
     # read targets, save edges
     print("loading input data; this could take a while if the lists are very long")
+    print("targets")
+    sys.stderr.flush()
     targets = read_single_value(args.target_list)
     targets = np.log(targets)
     total_sims = len(targets)
-    if args.edge_width == 'sigma':
-        edges = read_single_value_dict(args.target_list)
-    else:
-        edges = fill_dict_single_value(float(args.edge_width),total_sims)
 
     # normalize maps                                                              
     meanSig = np.mean(targets)
@@ -409,10 +397,12 @@ def prep_preprocessed_and_train():
     targets = dict_from_list(targets)
         
     # other inputs
+    print("sample_widths")
+    sys.stderr.flush()
     sample_widths = load_single_value_dict(args.samplewidth_list)
+    print("genos")
+    sys.stderr.flush()
     genos = read_dict(args.geno_list)
-    locs = read_dict(args.loc_list)
-    pos = read_dict(args.pos_list)
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
@@ -436,15 +426,13 @@ def prep_preprocessed_and_train():
         edges=None,
         shuffle=True,
         genos=genos,
-        pos=pos,
-        locs=locs,
         sample_widths=sample_widths,
     )
     training_generator = DataGenerator(partition["train"], **params)
     validation_generator = DataGenerator(partition["validation"], **params)
 
     # train
-    load_modules()
+    load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("training!")
     history = model.fit_generator(
@@ -462,13 +450,14 @@ def prep_preprocessed_and_train():
 def prep_empirical_and_pred(meanSig, sdSig):
     # project locs
     locs = read_locs(args.empirical + ".locs")
-    locs, sampling_width = project_locs(locs)
+    locs, sampling_width = project_locs(locs) # ****** this needs to change
+    print("sampling_width:", sampling_width)
     locs = pad_locs(locs, args.max_n)
     locs = np.reshape(locs, (1, locs.shape[0], locs.shape[1]))
     sampling_width = np.reshape(sampling_width, (1))
 
     # load model
-    load_modules()
+    load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
 
     #since outfile must be appended to in loop, delete old one first
@@ -478,52 +467,17 @@ def prep_empirical_and_pred(meanSig, sdSig):
     
     # convert vcf to geno matrix
     for i in range(args.num_pred):
-        test_genos, test_pos, max_pos = vcf2genos(
+        test_genos, test_pos = vcf2genos(
             args.empirical + ".vcf", args.max_n, args.num_snps, args.phase
         )
+        ibd(test_genos, locs[0], args.phase, args.num_snps)
         test_genos = np.reshape(
             test_genos, (1, test_genos.shape[0], test_genos.shape[1])
         )
         test_pos = np.reshape(test_pos, (1, test_pos.shape[0]))
         dataset = args.empirical + "_" + str(i)
         prediction = model.predict([test_genos, test_pos, locs, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, dataset, out_file, "a+")
-
-    return
-
-
-def prep_empirical_preprocessed_and_pred(meanSig, sdSig):
-
-    # load inputs
-    genos = read_dict(args.geno_list)
-    datasets = np.array(read_list(args.geno_list))  # (filenames for output)
-    poss = read_dict(args.pos_list)
-    locs = read_locs(args.empirical + ".locs")
-    locs, sampling_width = project_locs(locs)
-    locs = pad_locs(locs, args.max_n)
-    locs = np.reshape(locs, (1, locs.shape[0], locs.shape[1]))
-    sampling_width = np.reshape(sampling_width, (1))
-
-    # load model
-    load_modules()
-    model, checkpointer, earlystop, reducelr = load_network()
-
-    #since outfile must be appended to in loop, delete old one first
-    out_file = f"{args.out}_sigma_predictions.txt"
-    if os.path.exists(out_file):
-        os.remove(out_file)
-    
-    # predict
-    print("predicting")
-    for i in range(len(datasets)):
-        test_genos = np.load(genos[i])
-        test_pos = np.load(poss[i])
-        test_genos = np.reshape(
-            test_genos, (1, test_genos.shape[0], test_genos.shape[1])
-        )
-        test_pos = np.reshape(test_pos, (1, test_pos.shape[0]))
-        prediction = model.predict([test_genos, test_pos, locs, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, datasets[i], out_file, "a+")
+        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset, out_file, "a+") # *** (needs work)
 
     return
 
@@ -535,8 +489,6 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
     targets = np.log(targets)
     targets = dict_from_list(targets)
     genos = read_dict(args.geno_list)
-    poss = read_dict(args.pos_list)
-    locs = read_dict(args.loc_list)
     sample_widths = load_single_value_dict(args.samplewidth_list)
 
     # organize "partition" to hand to data generator
@@ -552,18 +504,16 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
         edges=None,
         shuffle=False,
         genos=genos,
-        poss=poss,
-        locs=locs,
         sample_widths=sample_widths,
     )
     generator = DataGenerator(partition["prediction"], **params)
 
     # predict
-    load_modules()
+    load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, simids, mode = "w")
+    unpack_predictions(predictions, meanSig, sdSig, targets, simids, simids, mode = "w") # *** needs work
 
     return
 
@@ -575,7 +525,7 @@ def prep_trees_and_pred(meanSig, sdSig):
     targets = np.log(targets)
     targets = dict_from_list(targets)
     total_sims = len(targets)
-    if args.edge_width == 'sigma':
+    if args.edge_width == 'sigma': #### *** change this to grab sigma from tree sequences
         edges = read_single_value_dict(args.target_list)
     else:
         edges = fill_dict_single_value(float(args.edge_width),total_sims)
@@ -591,7 +541,8 @@ def prep_trees_and_pred(meanSig, sdSig):
     
     # organize "partition" to hand to data generator
     partition = {}
-    partition["prediction"] = np.arange(0, args.num_pred)
+    simids = np.random.choice(np.arange(0, total_sims), args.num_pred, replace=False)
+    partition["prediction"] = simids
 
     # get generator ready
     params = make_generator_params_dict(
@@ -601,40 +552,33 @@ def prep_trees_and_pred(meanSig, sdSig):
         edges=edges,
         shuffle=False,
         genos=None,
-        poss=None,
-        locs=None,
         sample_widths=None,
     )
     generator = DataGenerator(partition["prediction"], **params)
     
     # predict
-    load_modules()
+    load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, trees, mode = "w")
-
+    unpack_predictions(predictions, meanSig, sdSig, targets, simids, trees, mode = "w") ### *** needs work
     return
 
 
-def unpack_predictions(predictions, meanSig, sdSig, targets, datasets, out_file = f"{args.out}_sigma_predictions.txt", mode = "a+"):
-    squared_log_errors = []
-    squared_errors = []
+def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets, out_file = f"{args.out}_sigma_predictions.txt", mode = "a+"):
+    raes = []
     with open(out_file, mode) as out_f:
         if args.empirical == None:
             for i in range(len(predictions)):
-                trueval = float(targets[i])
+                trueval = float(targets[simids[i]])
                 prediction = predictions[i][0]
                 prediction = (prediction * sdSig) + meanSig
-                error = (trueval - prediction) ** 2
-                squared_log_errors.append(error)
                 trueval = np.exp(trueval)
                 prediction = np.exp(prediction)
-                error = (trueval - prediction) ** 2
-                squared_errors.append(error)
+                error = abs( (trueval - prediction) / trueval )
+                raes.append(error)
                 print(datasets[i], np.round(trueval, 10), np.round(prediction, 10), file = out_f)
-            print("RMSLE:", np.mean(squared_log_errors) ** (1 / 2), file = out_f)
-            print("RMSE:", np.mean(squared_errors) ** (1 / 2), file = out_f)
+            print("mean RAE:", np.mean(raes), file = out_f)
         else:
             prediction = predictions[0][0]
             prediction = (prediction * sdSig) + meanSig
@@ -643,6 +587,8 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, datasets, out_file 
             print(datasets, prediction, file = out_f)
 
     return
+
+
 
 
 
@@ -683,9 +629,4 @@ if args.predict == True:
             prep_trees_and_pred(meanSig, sdSig)
     else:
         print("predicting on empirical data")
-        if args.preprocessed == True:
-            print("using pre-processed tensors")
-            prep_empirical_preprocessed_and_pred(meanSig, sdSig)
-        else:
-            print("using a single VCF")
-            prep_empirical_and_pred(meanSig, sdSig)
+        prep_empirical_and_pred(meanSig, sdSig)
