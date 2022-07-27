@@ -7,18 +7,6 @@ import random
 
 # get sampling width
 def project_locs(coords):
-    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian, which might mess things up ### *** check this
-    min_lat = min(coords[:,0])
-    max_lat = max(coords[:,0])
-    min_long = min(coords[:,1]) 
-    max_long = max(coords[:,1])
-    lat_range = max_lat - min_lat # latitudinal range
-    long_range = max_long - min_long
-    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian                       
-    if abs(lat_range) > 180 or abs(long_range) > 180:
-        print("samples coords span over 180 degrees or 180th meridian; the code isn't ready to deal with that")
-        exit()
-
     n =len(coords)
     sampling_width = 0
     for i in range(0,n-1):
@@ -26,7 +14,6 @@ def project_locs(coords):
             d = distance.distance(coords[i,:], coords[j,:]).km # ellipsoid='WGS-84' by default
             if d > sampling_width:
                 sampling_width = float(d)
-
     return sampling_width
 
 
@@ -43,10 +30,9 @@ def pad_locs(locs, max_n):
 #     2. no missing data: filter or impute.
 #     3. ideally no sex chromosomes, and only look at one sex at a time.
 def vcf2genos(vcf_path, max_n, num_snps, phase):
-    geno_mat, pos_list = [], []
+    geno_mat = []
     vcf = open(vcf_path, "r")
     current_chrom = None
-    previous_pos,output_pos = 0,0
     for line in vcf:
         if line[0:2] == "##":
             pass
@@ -68,21 +54,9 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
                 else:
                     print("problem")
                     exit()
-            for i in range((max_n * phase) - len(genos)):  # pad with 0s
+            for i in range((max_n * phase) - len(genos)): # pad with 0s
                 genos.append(0)
             geno_mat.append(genos)
-
-            # deal with genomic position
-            chrom = newline[0]
-            pos = int(newline[1])
-            if chrom == current_chrom:
-                output_pos += (pos-previous_pos)
-            else:
-                current_chrom = str(chrom)
-                output_pos += 10000  # skipping 10kb between chroms/scaffolds (also skipping 10kb before first snp, currently)
-                output_pos += pos
-            previous_pos = int(pos) 
-            pos_list.append(output_pos)
 
     # check if enough snps
     if len(geno_mat) < num_snps:
@@ -94,16 +68,11 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
 
     # sample snps
     geno_mat = np.array(geno_mat)
-    pos_list = np.array(pos_list)
     mask = [True] * num_snps + [False] * (geno_mat.shape[0] - num_snps)
     np.random.shuffle(mask)
     geno_mat = geno_mat[mask, :]
-    pos_list = pos_list[mask]
 
-    # rescale positions
-    pos_list = pos_list / (pos_list[-1] + 1)  # +1 to avoid prop=1.0
-
-    return geno_mat, pos_list
+    return geno_mat
 
 
 # calculate isolation by distance                                                                           
@@ -212,10 +181,8 @@ def main():
     num_snps = int(sys.argv[3])
     outname = sys.argv[4]
     phase = int(sys.argv[5])
-    geno_mat, pos_list = vcf2genos(vcf_path, max_n, num_snps, phase)
+    geno_mat = vcf2genos(vcf_path, max_n, num_snps, phase)
     np.save(outname + ".genos", geno_mat)
-    np.save(outname + ".pos", pos_list)
-
 
 if __name__ == "__main__":
     main()

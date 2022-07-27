@@ -19,7 +19,7 @@ def check_params(args):
 
     # required arguments for training
     if args.train == True:
-        pass ### *** to do
+        pass
 
     # required arguments for prediction
     if args.predict == True:

@@ -21,7 +21,6 @@ class DataGenerator(tf.keras.utils.Sequence):
     min_n: int
     max_n: int
     batch_size: int
-    genome_length: int
     mu: float
     threads: int
     shuffle: bool
@@ -43,12 +42,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         "Initialize a few things"
         self.on_epoch_end()
         np.random.seed(self.baseseed)
-        warnings.filterwarnings( # pyslim.load() 
-            action='ignore',
-            category=UserWarning,
-            module='pyslim'
-        )
-        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning) # pyslim.recapitate() 
+        warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning) # (recapitate step)
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -127,7 +121,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         # read input                        
         print(filepath, seed)
         sys.stdout.flush()
-        #ts = pyslim.load(filepath)         
         ts = tskit.load(filepath)
         np.random.seed(seed)
 
@@ -142,11 +135,24 @@ class DataGenerator(tf.keras.utils.Sequence):
         alive_inds = []
         for i in ts.individuals():
             alive_inds.append(i.id)
+        print(f"Number of trees with only one root: {sum([t.num_roots == 1 for t in ts.trees()])}\n"
+              f"Number with more than one root: {sum([t.num_roots > 0 for t in ts.trees()])}")
+
         if self.recapitate == "True":
             Ne = len(alive_inds)
-            ts = pyslim.recapitate(
-                ts, recombination_rate=self.rho, ancestral_Ne=Ne, random_seed=seed
-            )
+            if ts.num_populations > 1:
+                ts = ts.simplify() # gets rid of weird, extraneous populations
+            demography = msprime.Demography.from_tree_sequence(ts)      
+            demography[0].initial_size = Ne 
+            ts = msprime.sim_ancestry(                           
+                    initial_state=ts,                            
+                    recombination_rate=self.rho,                   
+                    demography=demography,
+                    start_time=ts.metadata["SLiM"]["generation"],
+                    random_seed=seed,                       
+            )                                                    
+        print(f"Number of trees with only one root: {sum([t.num_roots == 1 for t in ts.trees()])}\n"
+              f"Number with more than one root: {sum([t.num_roots > 0 for t in ts.trees()])}")
 
         # crop map
         if self.sampling_width != None:
@@ -321,7 +327,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             (self.batch_size*self.num_boot, self.num_snps, self.max_n * self.phase), dtype="int8"
         )  # genos
         X2 = np.empty((self.batch_size*self.num_boot,))  # sample widths
-        y = np.empty((self.batch_size*self.num_boot), dtype=float)  # targets (sigma)
+        y = np.empty((self.batch_size*self.num_boot), dtype=float)  # targets 
 
         if self.preprocessed == False:
             ts_list = []
