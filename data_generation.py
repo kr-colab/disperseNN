@@ -256,7 +256,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                     geno_mat1.append(new_genotypes)            
                     snp_index_map[shuffled_indices[s]] = int(snp_counter)
                     snp_counter += 1
-            while snp_counter < total_snps and s < ts.num_sites: # likely replacing a few non-biallelic ### *** why s < ts.num_sites?
+            while snp_counter < total_snps: # likely need to replace a few non-biallelic sites
                 s += 1
                 new_genotypes = self.unpolarize(geno_mat0[shuffled_indices[s]], n)
                 if new_genotypes != False:

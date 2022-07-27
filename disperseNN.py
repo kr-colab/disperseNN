@@ -453,10 +453,9 @@ def prep_preprocessed_and_train():
 def prep_empirical_and_pred(meanSig, sdSig):
     # project locs
     locs = read_locs(args.empirical + ".locs")
-    locs, sampling_width = project_locs(locs) # ****** this needs to change
+    locs = np.array(locs)
+    sampling_width = project_locs(locs) # ****** this needs to change
     print("sampling_width:", sampling_width)
-    locs = pad_locs(locs, args.max_n)
-    locs = np.reshape(locs, (1, locs.shape[0], locs.shape[1]))
     sampling_width = np.reshape(sampling_width, (1))
 
     # load model
@@ -469,11 +468,11 @@ def prep_empirical_and_pred(meanSig, sdSig):
         os.remove(out_file)
     
     # convert vcf to geno matrix
-    for i in range(args.num_pred):
+    for i in range(args.num_boot):
         test_genos, test_pos = vcf2genos(
             args.empirical + ".vcf", args.max_n, args.num_snps, args.phase
         )
-        ibd(test_genos, locs[0], args.phase, args.num_snps)
+        ibd(test_genos, locs, args.phase, args.num_snps)
         test_genos = np.reshape(
             test_genos, (1, test_genos.shape[0], test_genos.shape[1])
         )

@@ -20,7 +20,7 @@ def check_params(args):
     if args.map_width != None and args.width_list != None:
         print("width and width lists are both provided; choose one or the other")
         exit()
-    if args.predict == True:
+    if args.predict == True and args.empirical == None:
         if args.num_pred == None:
             print("how many pred sets?")
             exit()

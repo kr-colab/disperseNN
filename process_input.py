@@ -5,88 +5,29 @@ import sys
 from geopy import distance
 import random
 
-# project locations from ellipsoid (lat,long) to square map (km)
+# get sampling width
 def project_locs(coords):
-
-    # find min/max lat and long
-    coords = np.array(coords)
+    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian, which might mess things up ### *** check this
     min_lat = min(coords[:,0])
     max_lat = max(coords[:,0])
     min_long = min(coords[:,1]) 
     max_long = max(coords[:,1])
     lat_range = max_lat - min_lat # latitudinal range
     long_range = max_long - min_long
-
-    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian
+    # quick check to make sure the samples don't span 180 degrees, or the 180th meridian                       
     if abs(lat_range) > 180 or abs(long_range) > 180:
         print("samples coords span over 180 degrees or 180th meridian; the code isn't ready to deal with that")
         exit()
 
-    # find a good width (km) for the sampling window
-    y_range = distance.distance([min_lat,min_long], [max_lat,min_long]).km # ellipsoid='WGS-84' by default
-    distA = distance.distance([min_lat,min_long], [min_lat,max_long]).km # longitudinal range is function of latitude
-    distB = distance.distance([max_lat,min_long], [max_lat,max_long]).km
-    x_range = max(distA,distB)
-    sampling_width = max([y_range,x_range])
+    n =len(coords)
+    sampling_width = 0
+    for i in range(0,n-1):
+        for j in range(i+1,n):
+            d = distance.distance(coords[i,:], coords[j,:]).km # ellipsoid='WGS-84' by default
+            if d > sampling_width:
+                sampling_width = float(d)
 
-    # rescale locs to (0,1)
-    coords[:, 0] = (coords[:, 0] - min_lat)  / lat_range # use latitudinal range, here.
-    coords[:, 1] = (coords[:, 1] - min_long) / long_range
-
-    # restore aspect ratio
-    if   x_range > y_range: # use km range, here.
-        coords[:, 0] *= y_range / x_range 
-    elif x_range < y_range:
-        coords[:, 1] *= x_range / y_range
-    coords = coords.T
-
-    return coords, sampling_width
-
-    ##### Alternatively: try to correct longitudinal stretch continuously #####
-    # # set bottom left corner of sampling window
-    # corner_bl = [min_lat, min_long]
-
-    # # bottom right corner: draw line S distance, same lat
-    # corner_br = list(corner_bl) # starting on top of the bottom left point
-    # dist_bottom = 0
-    # precision = 0.00001
-    # while dist_bottom < S:
-    #     corner_br[1] += precision
-    #     dist_bottom = distance.distance(corner_bl, corner_br).km
-
-    # # top corners: draw both sides simultaneously
-    # b=0
-    # corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=0))[0:2] # third val is altitude 
-    # corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=0))[0:2]
-    # dist_top = distance.distance(corner_tl, corner_tr).km
-    # if (dist_bottom - dist_top) > 0: # e.g. northern hemisphere
-    #     while dist_top < S:
-    #         b += precision
-    #         corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=-b))[0:2]
-    #         corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=b))[0:2]
-    #         dist_top = distance.distance(corner_tl, corner_tr).km
-    # else: # e.g. southern hemisphere
-    #     while dist_top > S:
-    #         b += precision
-    #         corner_tl = list(distance.distance(kilometers=S).destination(corner_bl, bearing=b))[0:2]
-    #         corner_tr = list(distance.distance(kilometers=S).destination(corner_br, bearing=-b))[0:2]
-    #         dist_top = distance.distance(corner_tl, corner_tr).km
-
-    # # finally, get individual locs
-    # from_bottom = abs(coords[:,0] - corner_bl[0])
-    # from_top = abs(coords[:,0] - corner_tl[0])
-    # total_y = from_bottom + from_top
-    # relative_y = (from_bottom / total_y)
-    # longitudinal_stretch = abs(corner_bl[1]-corner_tl[1]) 
-    # from_left = abs(coords[:,1] - (corner_bl[1]-(longitudinal_stretch*relative_y)))
-    # from_right = abs(coords[:,1] - (corner_br[1]+(longitudinal_stretch*relative_y)))
-    # total_x = from_left + from_right
-    # relative_x = (from_left / total_x)
-    # projection = [relative_x*S, relative_y*S]
-    # projection = np.array(projection)
-    # projection = projection.T
-    # return projection
-    ##########################################################################
+    return sampling_width
 
 
 # pad locations with zeros
@@ -166,7 +107,7 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
 
 
 # calculate isolation by distance                                                                           
-def ibd(genos, locs, phase, num_snps):
+def ibd(genos, coords, phase, num_snps):
 
     # subset for n samples (avoiding padding-zeros)                                                         
     n=0
@@ -178,10 +119,9 @@ def ibd(genos, locs, phase, num_snps):
     n+=1 # for 0 indexing                                                                                   
     if phase == 2:
         n = int(n/2)
-    genos = genos[:,0:n*phase]
-    locs = locs[:, 0:n]
+    genos = genos[:,0:n*phase] ### *** maybe don't need to subset, as long as we know n?
 
-    # if collapsed genos, make fake haplotypes for calcualting roussets statistic                           
+    # if collapsed genos, make fake haplotypes for calculating Rousset's statistic                           
     if phase == 1:
         geno_mat2 = []
         for i in range(genos.shape[1]):
@@ -243,11 +183,10 @@ def ibd(genos, locs, phase, num_snps):
             gendists.append(a)
 
     # geographic distance                                                         
-    locs = locs.T
     geodists = []
     for i in range(0,n-1):
         for j in range(i+1,n):
-            d = ( (locs[i,0]-locs[j,0])**2  + (locs[i,1]-locs[j,1])**2    )**(1/2)
+            d = distance.distance(coords[i,:], coords[j,:]).km
             d = np.log(d)
             geodists.append(d)
 
