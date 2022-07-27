@@ -38,6 +38,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     sample_widths: dict
     genos: dict
     preprocessed: bool
+    num_boot: int
 
     def __attrs_post_init__(self):
         "Initialize a few things"
@@ -190,6 +191,10 @@ class DataGenerator(tf.keras.utils.Sequence):
         ts = ts.simplify(keep_nodes)
 
         # mutate
+        if self.num_boot == 1:
+            total_snps = self.num_snps * self.polarize ### *** can't remember why this is *2 for polarize?
+        else:
+            total_snps = self.num_snps * 10 # arbitrary size of SNP table for bootstraps
         if self.mutate == "True":
             mu = float(self.mu)
             ts = msprime.sim_mutations(
@@ -200,7 +205,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 keep=True,
             )
             counter = 0
-            while ts.num_sites < (self.num_snps * self.polarize):
+            while ts.num_sites < (total_snps):
                 counter += 1
                 mu *= 10
                 ts = msprime.sim_mutations(
@@ -245,13 +250,13 @@ class DataGenerator(tf.keras.utils.Sequence):
             geno_mat1 = []    
             snp_counter = 0   
             snp_index_map = {}
-            for s in range(self.num_snps): 
+            for s in range(total_snps): 
                 new_genotypes = self.unpolarize(geno_mat0[shuffled_indices[s]], n)
                 if new_genotypes != False: # if bi-allelic, add in the snp
                     geno_mat1.append(new_genotypes)            
                     snp_index_map[shuffled_indices[s]] = int(snp_counter)
                     snp_counter += 1
-            while snp_counter < self.num_snps and s < ts.num_sites: # likely replacing a few non-biallelic
+            while snp_counter < total_snps and s < ts.num_sites: # likely replacing a few non-biallelic ### *** why s < ts.num_sites?
                 s += 1
                 new_genotypes = self.unpolarize(geno_mat0[shuffled_indices[s]], n)
                 if new_genotypes != False:
@@ -261,30 +266,38 @@ class DataGenerator(tf.keras.utils.Sequence):
             geno_mat0 = [] 
             sorted_indices = list(snp_index_map) 
             sorted_indices.sort() 
-            for snp in range(self.num_snps):
-                #print("current snp iteration:", snp, "\tindex from ts.genotype_matrix:", sorted_indices[snp], "\tindex in our filtered geno_mat", snp_index_map[sorted_indices[snp]])
+            for snp in range(total_snps):
                 geno_mat0.append(geno_mat1[snp_index_map[sorted_indices[snp]]])
             geno_mat0 = np.array(geno_mat0)
                                                 
         # sample SNPs
         else:
-            mask = [True] * self.num_snps + [False] * (ts.num_sites - self.num_snps)
+            mask = [True] * total_snps + [False] * (ts.num_sites - total_snps)
             np.random.shuffle(mask)
             geno_mat0 = geno_mat0[mask, :]
 
         # collapse genotypes, change to minor allele dosage (e.g. 0,1,2)
         if self.phase == 1:
-            geno_mat1 = np.zeros((self.num_snps, n))
+            geno_mat1 = np.zeros((total_snps, n))
             for ind in range(n):
                 geno_mat1[:, ind] += geno_mat0[:, ind * 2]
                 geno_mat1[:, ind] += geno_mat0[:, ind * 2 + 1]
             geno_mat0 = np.array(geno_mat1) # (change variable name)
-            
-        # shove the retained snps into padded genotype matrix
-        geno_mat1 = np.zeros((self.num_snps, self.max_n * self.phase))
-        geno_mat1[:, 0 : n * self.phase] = geno_mat0
 
-        return geno_mat1, sample_width
+        # sample SNPs for 'b' bootstrap replicates:
+        geno_mat_all = [] # this array will hold lots of pre-processed tensors from bootstrap reps
+        sample_width_all = []
+        for b in range(self.num_boot):
+            mask = [True] * self.num_snps + [False] * (total_snps - self.num_snps)
+            np.random.shuffle(mask)
+            geno_mat1 = geno_mat0[mask, :]
+            geno_mat2 = np.zeros((self.num_snps, self.max_n * self.phase)) # pad
+            geno_mat2[:, 0 : n * self.phase] = geno_mat1
+            geno_mat_all.append(geno_mat2)
+            sample_width_all.append(sampling_width)
+
+        return geno_mat_all, sample_width_all
+
 
     def preprocess_sample_ts(self, geno_path): ### *** un-modularize this, now
         "Seperate function for loading in pre-processed data"
@@ -299,17 +312,18 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # Initialization
         X1 = np.empty(
-            (self.batch_size, self.num_snps, self.max_n * self.phase), dtype="int8"
+            (self.batch_size*self.num_boot, self.num_snps, self.max_n * self.phase), dtype="int8"
         )  # genos
-        X2 = np.empty((self.batch_size,))  # sample widths
-        y = np.empty((self.batch_size), dtype=float)  # targets (sigma)
+        X2 = np.empty((self.batch_size*self.num_boot,))  # sample widths
+        y = np.empty((self.batch_size*self.num_boot), dtype=float)  # targets (sigma)
 
         if self.preprocessed == False:
             ts_list = []
             width_list = []
             edge_list = []
             for i, ID in enumerate(list_IDs_temp):
-                y[i] = self.targets[ID]
+                for rep in range(self.num_boot):
+                    y[rep+(i*self.num_boot)] = self.targets[ID]
                 filepath = self.trees[ID]
                 ts_list.append(filepath)
                 if self.map_width != None:
@@ -323,10 +337,12 @@ class DataGenerator(tf.keras.utils.Sequence):
                 self.sample_ts, zip(ts_list, width_list, edge_list, seeds)
             )
 
-            # unpack the multiprocess output
-            for i in range(len(batch)):
-                X1[i, :] = batch[i][0]
-                X2[i] = batch[i][1]
+            # unpack the multiprocess output                                             
+            for k in range(self.batch_size): 
+                for r in range(self.num_boot):
+                    est_index = r + (k*self.num_boot)
+                    X1[est_index, :] = batch[k][0][r]
+                    X2[est_index] = batch[k][1][r]
             X = [X1, X2]
 
         else:

@@ -75,10 +75,16 @@ parser.add_argument(
 )
 parser.add_argument("--rho", help="recombination rate", default=1e-8, type=float)
 parser.add_argument(
-    "--on_the_fly",
+    "--num_samples",
     default=1,
     type=int,
-    help="number of samples (with replacement) from each tree sequence",
+    help="number of organismal-samples (each of size n) from each tree sequence",
+)
+parser.add_argument(
+    "--num_boot",
+    default=1,
+    type=int,
+    help="number of bootstrap replicates from the genotype matrix of each sample",
 )
 parser.add_argument(
     "--validation_split",
@@ -297,6 +303,7 @@ def make_generator_params_dict(
         "sample_widths": sample_widths,
         "genos": genos,
         "preprocessed": args.preprocessed,
+        "num_boot": args.num_boot
     }
     return params
 
@@ -329,7 +336,7 @@ def prep_trees_and_train():
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
     train, val = train_test_split(sim_ids, test_size=args.validation_split)    
-    if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
+    if len(val)*args.num_samples % args.batch_size != 0 or len(train)*args.num_samples % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
@@ -339,7 +346,7 @@ def prep_trees_and_train():
     partition = {}
     partition["train"] = []
     partition["validation"] = []
-    num_reps = args.on_the_fly
+    num_reps = args.num_samples
     for i in train:
         for j in range(num_reps):
             partition["train"].append(i)
@@ -403,7 +410,7 @@ def prep_preprocessed_and_train():
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
     train, val = train_test_split(sim_ids, test_size=args.validation_split)
-    if len(val)*args.on_the_fly % args.batch_size != 0 or len(train)*args.on_the_fly % args.batch_size != 0:
+    if len(val)*args.num_samples % args.batch_size != 0 or len(train)*args.num_samples % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
@@ -528,7 +535,7 @@ def prep_trees_and_pred(meanSig, sdSig):
     # tree sequences                                                
     trees = read_dict(args.tree_list)
 
-    # map widths                                                    
+    # map widths       #### *** change this to grab sigma from tree sequences                                              
     if args.width_list != None:  # list of widths                   
         widths = read_single_value_dict(args.width_list)
     else:
@@ -564,15 +571,17 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets, o
     raes = []
     with open(out_file, mode) as out_f:
         if args.empirical == None:
-            for i in range(len(predictions)):
-                trueval = float(targets[simids[i]])
-                prediction = predictions[i][0]
-                prediction = (prediction * sdSig) + meanSig
-                trueval = np.exp(trueval)
-                prediction = np.exp(prediction)
-                error = abs( (trueval - prediction) / trueval )
-                raes.append(error)
-                print(datasets[i], np.round(trueval, 10), np.round(prediction, 10))#, file = out_f)
+            for i in range(args.num_pred):
+                for r in range(args.num_boot):
+                    pred_index = r + (i*args.num_boot)
+                    trueval = float(targets[simids[i]])
+                    prediction = predictions[pred_index][0]
+                    prediction = (prediction * sdSig) + meanSig
+                    trueval = np.exp(trueval)
+                    prediction = np.exp(prediction)
+                    rae = abs( (trueval - prediction) / trueval )
+                    raes.append(rae)
+                    print(i, np.round(trueval, 10), np.round(prediction, 10))#, file = out_f)
             print("mean RAE:", np.mean(raes))#, file = out_f)
         else:
             prediction = predictions[0][0]
@@ -603,7 +612,7 @@ if args.train == True:
 if args.predict == True:
     print("starting prediction pipeline")
     
-    # first need mean and sd from training
+    # first grab mean and sd from training distribution
     if args.training_targets != None:
         train_targets = read_single_value(args.training_targets)
         train_targets = np.log(train_targets)
@@ -611,7 +620,7 @@ if args.predict == True:
         sdSig = np.std(train_targets)
     elif args.training_mean != None:
         meanSig, sdSig = args.training_mean, args.training_sd
-    print("mean and sd:", meanSig, sdSig)
+    print("training mean and sd:", meanSig, sdSig)
 
     # prep inputs and predict
     if args.empirical == None:
