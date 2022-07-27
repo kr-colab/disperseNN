@@ -3,11 +3,11 @@
 import os
 import argparse
 import tskit
+from sklearn.model_selection import train_test_split
 from check_params import *
 from read_input import *
 from process_input import *
 from data_generation import DataGenerator
-from sklearn.model_selection import train_test_split
 
 def load_dl_modules():
     print("loading bigger modules")
@@ -57,18 +57,18 @@ parser.add_argument(
     "--min_n",
     default=None,
     type=int,
-    help="minimum number of samples (for pre-allocating memory)",
+    help="minimum sample size",
 )
 parser.add_argument(
     "--max_n",
     default=None,
     type=int,
-    help="maximum number of samples (for pre-allocating memory)",
+    help="maximum sample size",
     required=True,
 )
 parser.add_argument(
     "--mu",
-    help="baseline mutation rate: mu is increased until num_snps is achieved",
+    help="beginning mutation rate: mu is increased until num_snps is achieved",
     default=1e-15,
     type=float,
 )
@@ -106,7 +106,7 @@ parser.add_argument(
     help="important for rescaling the genomic positions.",
 )
 parser.add_argument(
-    "--dropout_prop",
+    "--dropout",
     default=0,
     type=float,
     help="proportion of weights to zero at the dropout layer. \default: 0",
@@ -122,7 +122,7 @@ parser.add_argument(
     "--out", help="file name stem for output", default=None, required=True
 )
 parser.add_argument("--seed", default=None, type=int, help="random seed.")
-parser.add_argument("--gpu_index", default="-1", type=str, help="index of gpu. To avoid GPUs, skip this flag or say '-1'. To use any available GPU say 'x' ")
+parser.add_argument("--gpu_index", default="-1", type=str, help="index of gpu. To avoid GPUs, skip this flag or say '-1'. To use any available GPU say 'any' ")
 parser.add_argument(
     "--load_weights",
     default=None,
@@ -137,14 +137,14 @@ parser.add_argument(
 )
 parser.add_argument(
     "--phase",
-    default=None,
+    default=1,
     type=int,
     help="1 for unknown phase, 2 for known phase",
     required=True,
 )
 parser.add_argument(
     "--polarize",
-    default=None,
+    default=2,
     type=int,
     help="2 for major/minor, 1 for ancestral/derived",
     required=True,
@@ -167,16 +167,7 @@ parser.add_argument(
 parser.add_argument("--samplewidth_list", help="", default=None)
 parser.add_argument("--geno_list", help="", default=None)
 parser.add_argument(
-    "--training_mean", help="mean sigma from training", default=None, type=float
-)
-parser.add_argument(
-    "--training_sd",
-    help="sigma standard deviation from training",
-    default=None,
-    type=float,
-)
-parser.add_argument(
-    "--training_targets", help="map list for training data", default=None
+    "--training_mean_sd", help="list of tree sequences used for training", default=None
 )
 parser.add_argument(
     "--learning_rate",
@@ -193,12 +184,14 @@ def load_network():
     if args.seed is not None:
         np.random.seed(args.seed)
         tf.random.set_seed(args.seed)
-    if args.gpu_index != 'x': # 'x' will search for any available GPU
+    if args.gpu_index != 'any': # 'any' will search for any available GPU
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_index
     tf.config.threading.set_intra_op_parallelism_threads(args.threads)
 
     # update 1dconv+pool iterations based on number of SNPs
-    num_conv_iterations = int(len(str(args.num_snps)) - 3) ### *** clean up
+    num_conv_iterations = int(np.floor(np.log10(args.num_snps))-2)
+    if num_conv_iterations < 0:
+        num_conv_iterations = 0
 
     # cnn architecture
     conv_kernal_size = 2
@@ -226,7 +219,7 @@ def load_network():
     h = tf.keras.layers.concatenate([h, width_input])
     h = tf.keras.layers.Dense(128, activation="relu")(h)
 
-    h = tf.keras.layers.Dropout(args.dropout_prop)(h)
+    h = tf.keras.layers.Dropout(args.dropout)(h)
     output = tf.keras.layers.Dense(1, activation="linear")(h)
     model = tf.keras.Model(
         inputs=[geno_input, width_input], outputs=[output]
@@ -323,6 +316,7 @@ def prep_trees_and_train():
     # normalize maps
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
+    np.save(f"{args.out}_training_mean_sd", [meanSig,sdSig])    
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
 
@@ -387,6 +381,7 @@ def prep_preprocessed_and_train():
     # normalize targets                                                              
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
+    np.save(f"{args.out}_training_mean_sd", [meanSig,sdSig])    
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
         
@@ -442,15 +437,8 @@ def prep_preprocessed_and_train():
 
 def prep_empirical_and_pred():
 
-    # grab mean and sd from training distribution         
-    if args.training_targets != None:
-        train_targets = read_single_value(args.training_targets)
-        train_targets = np.log(train_targets)
-        meanSig = np.mean(train_targets)
-        sdSig = np.std(train_targets)
-    elif args.training_mean != None:
-        meanSig, sdSig = args.training_mean, args.training_sd
-    print("training mean and sd:", meanSig, sdSig)
+    # grab mean and sd from training distribution                                 
+    meanSig, sdSig = np.load(args.training_mean_sd)
 
     # project locs
     locs = read_locs(args.empirical + ".locs")
@@ -463,11 +451,6 @@ def prep_empirical_and_pred():
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
 
-    # since outfile must be appended to in loop, delete old one first
-    out_file = f"{args.out}_sigma_predictions.txt"
-    if os.path.exists(out_file):
-        os.remove(out_file)
-    
     # convert vcf to geno matrix
     for i in range(args.num_boot):
         test_genos, test_pos = vcf2genos(
@@ -486,15 +469,8 @@ def prep_empirical_and_pred():
 
 def prep_preprocessed_and_pred():
    
-    # first grab mean and sd from training distribution         
-    if args.training_targets != None:
-        train_targets = read_single_value(args.training_targets)
-        train_targets = np.log(train_targets)
-        meanSig = np.mean(train_targets)
-        sdSig = np.std(train_targets)
-    elif args.training_mean != None:
-        meanSig, sdSig = args.training_mean, args.training_sd
-    print("training mean and sd:", meanSig, sdSig)
+    # grab mean and sd from training distribution                                 
+    meanSig, sdSig = np.load(args.training_mean_sd)
 
     # load inputs
     targets = read_single_value(args.target_list)
@@ -523,23 +499,16 @@ def prep_preprocessed_and_pred():
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, simids, simids, mode = "w") # *** needs work
+    unpack_predictions(predictions, meanSig, sdSig, targets, simids, simids) # *** needs work
 
     return
 
 
 def prep_trees_and_pred():
 
-    # first grab mean and sd from training distribution         
-    if args.training_targets != None:
-        train_targets = read_single_value(args.training_targets)
-        train_targets = np.log(train_targets)
-        meanSig = np.mean(train_targets)
-        sdSig = np.std(train_targets)
-    elif args.training_mean != None:
-        meanSig, sdSig = args.training_mean, args.training_sd
-    print("training mean and sd:", meanSig, sdSig)
-    
+    # grab mean and sd from training distribution                                 
+    meanSig, sdSig = np.load(args.training_mean_sd)
+
     # tree sequences                                                
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
@@ -573,15 +542,15 @@ def prep_trees_and_pred():
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, simids, trees, mode = "w") ### *** needs work
+    unpack_predictions(predictions, meanSig, sdSig, targets, simids, trees) ### *** needs work
 
     return
 
 
-def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets, out_file = f"{args.out}_sigma_predictions.txt", mode = "a+"):
+def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets):
     raes = []
-    with open(out_file, mode) as out_f:
-        if args.empirical == None:
+    if args.empirical == None:
+        with open(f"{args.out}_predictions.txt", "w") as out_f:
             for i in range(args.num_pred):
                 for r in range(args.num_boot):
                     pred_index = r + (i*args.num_boot)
@@ -592,14 +561,15 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, datasets, o
                     prediction = np.exp(prediction)
                     rae = abs( (trueval - prediction) / trueval )
                     raes.append(rae)
-                    print(i, np.round(trueval, 10), np.round(prediction, 10))#, file = out_f)
-            print("mean RAE:", np.mean(raes))#, file = out_f)
-        else:
+                    print(i, np.round(trueval, 10), np.round(prediction, 10), file=out_f)
+            print("mean RAE:", np.mean(raes))
+    else:
+        with open(f"{args.out}_predictions.txt", "a") as out_f:
             prediction = predictions[0][0]
             prediction = (prediction * sdSig) + meanSig
             prediction = np.exp(prediction)
             prediction = np.round(prediction, 10)
-            print(datasets, prediction)#, file = out_f)
+            print(datasets, prediction, file=out_f)
 
     return
 
