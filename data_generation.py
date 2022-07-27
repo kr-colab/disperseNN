@@ -8,6 +8,7 @@ import tskit
 import multiprocessing
 import warnings
 from attrs import define,field
+from read_input import *
 
 @define
 class DataGenerator(tf.keras.utils.Sequence):
@@ -29,10 +30,8 @@ class DataGenerator(tf.keras.utils.Sequence):
     recapitate: bool
     mutate: bool
     crop: float
-    map_width: float
-    widths: dict
     sampling_width: float
-    edges: dict
+    edge_width: dict
     phase: int
     polarize: int
     sample_widths: dict
@@ -122,15 +121,22 @@ class DataGenerator(tf.keras.utils.Sequence):
             
         return new_genotypes
     
-    def sample_ts(self, filepath, W, edge_width, seed):
+    def sample_ts(self, filepath, seed):
         "The meat: load in and fully process a tree sequence"
         
         # read input                        
-        print(filepath, W, edge_width, seed)
+        print(filepath, seed)
         sys.stdout.flush()
         #ts = pyslim.load(filepath)         
         ts = tskit.load(filepath)
         np.random.seed(seed)
+
+        # grab map width and sigma from provenance
+        W = parse_provenance(ts, 'W')
+        if self.edge_width == 'sigma':
+            edge_width = parse_provenance(ts, 'sigma')
+        else:
+            edge_width = float(self.edge_width)
 
         # recapitate
         alive_inds = []
@@ -148,7 +154,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         else:
             sample_width = np.random.uniform(
                 0, W - (edge_width * 2)
-            )  # maybe change to log-U once you have plenty of big maps, W>100
+            ) 
             ### for misspecification analysis only
             # sample_width = np.random.uniform(0,40)
             # sample_width = np.random.uniform(40,W-(edge_width*2))
@@ -192,7 +198,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # mutate
         if self.num_boot == 1:
-            total_snps = self.num_snps * self.polarize ### *** can't remember why this is *2 for polarize?
+            total_snps = self.num_snps
         else:
             total_snps = self.num_snps * 10 # arbitrary size of SNP table for bootstraps
         if self.mutate == "True":
@@ -205,7 +211,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 keep=True,
             )
             counter = 0
-            while ts.num_sites < (total_snps):
+            while ts.num_sites < (total_snps * 2): # extra SNPs because a few are likely  non-biallelic
                 counter += 1
                 mu *= 10
                 ts = msprime.sim_mutations(
@@ -319,22 +325,14 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         if self.preprocessed == False:
             ts_list = []
-            width_list = []
-            edge_list = []
             for i, ID in enumerate(list_IDs_temp):
+                ts_list.append(self.trees[ID])
                 for rep in range(self.num_boot):
                     y[rep+(i*self.num_boot)] = self.targets[ID]
-                filepath = self.trees[ID]
-                ts_list.append(filepath)
-                if self.map_width != None:
-                    width_list.append(self.map_width)
-                else:
-                    width_list.append(self.widths[ID])
-                edge_list.append(self.edges[ID])
             seeds = np.random.randint(1e9, size=(self.batch_size))
             pool = multiprocessing.Pool(self.threads, maxtasksperchild=1)
             batch = pool.starmap(
-                self.sample_ts, zip(ts_list, width_list, edge_list, seeds)
+                self.sample_ts, zip(ts_list, seeds)
             )
 
             # unpack the multiprocess output                                             

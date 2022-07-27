@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import tskit
 from check_params import *
 from read_input import *
 from process_input import *
@@ -33,14 +34,12 @@ parser.add_argument(
 parser.add_argument("--empirical", default=None, help="prefix for vcf and locs")
 parser.add_argument("--target_list", help="list of PNG filepaths.", default=None)
 parser.add_argument("--tree_list", help="list of tree filepaths.", default=None)
-parser.add_argument("--width_list", help="list of map widths.", default=None)
 parser.add_argument(
     "--edge_width",
     help="crop a fixed width from each edge of the map; enter 'sigma' to set edge_width equal to sigma ",
     default=None,
     type=str,
 )
-parser.add_argument("--map_width", help="the whole habitat", default=None, type=float)
 parser.add_argument(
     "--sampling_width", help="just the sampling area", default=None, type=float
 )
@@ -199,7 +198,7 @@ def load_network():
     tf.config.threading.set_intra_op_parallelism_threads(args.threads)
 
     # update 1dconv+pool iterations based on number of SNPs
-    num_conv_iterations = int(len(str(args.num_snps)) - 3)
+    num_conv_iterations = int(len(str(args.num_snps)) - 3) ### *** clean up
 
     # cnn architecture
     conv_kernal_size = 2
@@ -276,7 +275,7 @@ def load_network():
 
 
 def make_generator_params_dict(
-    targets, trees, widths, edges, shuffle, genos, sample_widths
+    targets, trees, shuffle, genos, sample_widths
 ):
     params = {
         "targets": targets,
@@ -294,10 +293,8 @@ def make_generator_params_dict(
         "recapitate": args.recapitate,
         "mutate": args.mutate,
         "crop": args.crop,
-        "map_width": args.map_width,
-        "widths": widths,
         "sampling_width": args.sampling_width,
-        "edges": edges,
+        "edge_width": args.edge_width,
         "phase": args.phase,
         "polarize": args.polarize,
         "sample_widths": sample_widths,
@@ -309,29 +306,25 @@ def make_generator_params_dict(
 
 
 def prep_trees_and_train():
-    # read targets, save edges
-    targets = read_single_value(args.target_list)    
-    targets = np.log(targets)
-    total_sims = len(targets)
-    if args.edge_width == 'sigma':
-        edges = read_single_value_dict(args.target_list)
-    else:
-        edges = fill_dict_single_value(float(args.edge_width),total_sims)
+
+    # tree sequences                 
+    trees = read_dict(args.tree_list)
+    total_sims = len(trees)
+
+    # read targets
+    print("reading targets from tree sequences: this should take several minutes")
+    targets = []
+    for i in range(total_sims):
+        ts = tskit.load(trees[i]) ### *** can we access provenance without loading the whole tree sequence?
+        target = parse_provenance(ts, 'sigma')
+        target = np.log(target)
+        targets.append(target)
         
     # normalize maps
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
-
-    # tree sequences
-    trees = read_dict(args.tree_list)
-
-    # map widths
-    if args.width_list != None:  # list of widths
-        widths = read_single_value_dict(args.width_list)
-    else:
-        widths = fill_dict_single_value(args.map_width,total_sims)
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
@@ -346,20 +339,17 @@ def prep_trees_and_train():
     partition = {}
     partition["train"] = []
     partition["validation"] = []
-    num_reps = args.num_samples
     for i in train:
-        for j in range(num_reps):
+        for j in range(args.num_samples):
             partition["train"].append(i)
     for i in val:
-        for j in range(num_reps):
+        for j in range(args.num_samples):
             partition["validation"].append(i)
 
     # initialize generators
     params = make_generator_params_dict(
-        targets,
+        targets=targets,
         trees=trees,
-        widths=widths,
-        edges=edges,
         shuffle=True,
         genos=None,
         sample_widths=None,
@@ -380,30 +370,31 @@ def prep_trees_and_train():
         validation_data=validation_generator,
         callbacks=[checkpointer, earlystop, reducelr],
     )
+
     return
 
 
 def prep_preprocessed_and_train():
     
-    # read targets, save edges
+    # read targets
     print("loading input data; this could take a while if the lists are very long")
-    print("targets")
+    print("\ttargets")
     sys.stderr.flush()
     targets = read_single_value(args.target_list)
     targets = np.log(targets)
     total_sims = len(targets)
 
-    # normalize maps                                                              
+    # normalize targets                                                              
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
         
     # other inputs
-    print("sample_widths")
+    print("\tsample_widths")
     sys.stderr.flush()
     sample_widths = load_single_value_dict(args.samplewidth_list)
-    print("genos")
+    print("\tgenos")
     sys.stderr.flush()
     genos = read_dict(args.geno_list)
 
@@ -423,10 +414,8 @@ def prep_preprocessed_and_train():
 
     # initialize generators
     params = make_generator_params_dict(
-        targets,
+        targets=targets,
         trees=None,
-        widths=None,
-        edges=None,
         shuffle=True,
         genos=genos,
         sample_widths=sample_widths,
@@ -447,14 +436,26 @@ def prep_preprocessed_and_train():
         validation_data=validation_generator,
         callbacks=[checkpointer, earlystop, reducelr],
     )
+
     return
 
 
-def prep_empirical_and_pred(meanSig, sdSig):
+def prep_empirical_and_pred():
+
+    # grab mean and sd from training distribution         
+    if args.training_targets != None:
+        train_targets = read_single_value(args.training_targets)
+        train_targets = np.log(train_targets)
+        meanSig = np.mean(train_targets)
+        sdSig = np.std(train_targets)
+    elif args.training_mean != None:
+        meanSig, sdSig = args.training_mean, args.training_sd
+    print("training mean and sd:", meanSig, sdSig)
+
     # project locs
     locs = read_locs(args.empirical + ".locs")
     locs = np.array(locs)
-    sampling_width = project_locs(locs) # ****** this needs to change
+    sampling_width = project_locs(locs)
     print("sampling_width:", sampling_width)
     sampling_width = np.reshape(sampling_width, (1))
 
@@ -462,7 +463,7 @@ def prep_empirical_and_pred(meanSig, sdSig):
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
 
-    #since outfile must be appended to in loop, delete old one first
+    # since outfile must be appended to in loop, delete old one first
     out_file = f"{args.out}_sigma_predictions.txt"
     if os.path.exists(out_file):
         os.remove(out_file)
@@ -483,8 +484,18 @@ def prep_empirical_and_pred(meanSig, sdSig):
     return
 
 
-def prep_preprocessed_and_pred(meanSig, sdSig):
-    
+def prep_preprocessed_and_pred():
+   
+    # first grab mean and sd from training distribution         
+    if args.training_targets != None:
+        train_targets = read_single_value(args.training_targets)
+        train_targets = np.log(train_targets)
+        meanSig = np.mean(train_targets)
+        sdSig = np.std(train_targets)
+    elif args.training_mean != None:
+        meanSig, sdSig = args.training_mean, args.training_sd
+    print("training mean and sd:", meanSig, sdSig)
+
     # load inputs
     targets = read_single_value(args.target_list)
     targets = np.log(targets)
@@ -499,10 +510,8 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
 
     # get generator ready
     params = make_generator_params_dict(
-        targets,
+        targets=targets,
         trees=None,
-        widths=None,
-        edges=None,
         shuffle=False,
         genos=genos,
         sample_widths=sample_widths,
@@ -519,27 +528,31 @@ def prep_preprocessed_and_pred(meanSig, sdSig):
     return
 
 
-def prep_trees_and_pred(meanSig, sdSig):
-    
-    # read targets, save edges                                                     
-    targets = read_single_value(args.target_list)
-    targets = np.log(targets)
-    targets = dict_from_list(targets)
-    total_sims = len(targets)
-    if args.edge_width == 'sigma': #### *** change this to grab sigma from tree sequences
-        edges = read_single_value_dict(args.target_list)
-    else:
-        edges = fill_dict_single_value(float(args.edge_width),total_sims)
+def prep_trees_and_pred():
 
+    # first grab mean and sd from training distribution         
+    if args.training_targets != None:
+        train_targets = read_single_value(args.training_targets)
+        train_targets = np.log(train_targets)
+        meanSig = np.mean(train_targets)
+        sdSig = np.std(train_targets)
+    elif args.training_mean != None:
+        meanSig, sdSig = args.training_mean, args.training_sd
+    print("training mean and sd:", meanSig, sdSig)
+    
     # tree sequences                                                
     trees = read_dict(args.tree_list)
+    total_sims = len(trees)
 
-    # map widths       #### *** change this to grab sigma from tree sequences                                              
-    if args.width_list != None:  # list of widths                   
-        widths = read_single_value_dict(args.width_list)
-    else:
-        widths = fill_dict_single_value(args.map_width,total_sims)    
-    
+    # read targets                                                                
+    print("reading true values from tree sequences: this should take several minutes")
+    targets = []
+    for i in range(total_sims):
+        ts = tskit.load(trees[i])
+        target = parse_provenance(ts, 'sigma')
+        target = np.log(target)
+        targets.append(target)
+
     # organize "partition" to hand to data generator
     partition = {}
     simids = np.random.choice(np.arange(0, total_sims), args.num_pred, replace=False)
@@ -547,10 +560,8 @@ def prep_trees_and_pred(meanSig, sdSig):
 
     # get generator ready
     params = make_generator_params_dict(
-        targets, 
+        targets=[None]*total_sims, 
         trees=trees,
-        widths=widths,
-        edges=edges,
         shuffle=False,
         genos=None,
         sample_widths=None,
@@ -563,6 +574,7 @@ def prep_trees_and_pred(meanSig, sdSig):
     print("predicting")
     predictions = model.predict_generator(generator)
     unpack_predictions(predictions, meanSig, sdSig, targets, simids, trees, mode = "w") ### *** needs work
+
     return
 
 
@@ -610,26 +622,14 @@ if args.train == True:
 # predict
 if args.predict == True:
     print("starting prediction pipeline")
-    
-    # first grab mean and sd from training distribution
-    if args.training_targets != None:
-        train_targets = read_single_value(args.training_targets)
-        train_targets = np.log(train_targets)
-        meanSig = np.mean(train_targets)
-        sdSig = np.std(train_targets)
-    elif args.training_mean != None:
-        meanSig, sdSig = args.training_mean, args.training_sd
-    print("training mean and sd:", meanSig, sdSig)
-
-    # prep inputs and predict
     if args.empirical == None:
         print("predicting on simulated data")
         if args.preprocessed == True:
             print("using pre-processed tensors")
-            prep_preprocessed_and_pred(meanSig, sdSig)
+            prep_preprocessed_and_pred()
         else:
             print("using tree sequences")
-            prep_trees_and_pred(meanSig, sdSig)
+            prep_trees_and_pred()
     else:
         print("predicting on empirical data")
-        prep_empirical_and_pred(meanSig, sdSig)
+        prep_empirical_and_pred()

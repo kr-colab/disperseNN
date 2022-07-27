@@ -17,9 +17,6 @@ def check_params(args):
         if args.sampling_width > 1 or args.sampling_width <= 0:
             print("sampling width as proportion, (0,1)")
             exit()
-    if args.map_width != None and args.width_list != None:
-        print("width and width lists are both provided; choose one or the other")
-        exit()
     if args.predict == True and args.empirical == None:
         if args.num_pred == None:
             print("how many pred sets?")
