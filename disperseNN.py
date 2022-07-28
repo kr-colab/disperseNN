@@ -48,7 +48,6 @@ parser.add_argument(
     default=None,
     type=int,
     help="maximum number of SNPs across all datasets (for pre-allocating memory)",
-    required=True,
 )
 parser.add_argument(
     "--num_pred", default=None, type=int, help="number of datasets to predict on"
@@ -64,7 +63,6 @@ parser.add_argument(
     default=None,
     type=int,
     help="maximum sample size",
-    required=True,
 )
 parser.add_argument(
     "--mu",
@@ -80,10 +78,10 @@ parser.add_argument(
     help="number of organismal-samples (each of size n) from each tree sequence",
 )
 parser.add_argument(
-    "--num_boot",
+    "--num_reps",
     default=1,
     type=int,
-    help="number of bootstrap replicates from the genotype matrix of each sample",
+    help="number of replicate-draws from the genotype matrix of each sample",
 )
 parser.add_argument(
     "--validation_split",
@@ -134,14 +132,12 @@ parser.add_argument(
     default=1,
     type=int,
     help="1 for unknown phase, 2 for known phase",
-    required=True,
 )
 parser.add_argument(
     "--polarize",
     default=2,
     type=int,
     help="2 for major/minor, 1 for ancestral/derived",
-    required=True,
 )
 parser.add_argument(
     "--keras_verbose",
@@ -161,7 +157,7 @@ parser.add_argument(
 parser.add_argument("--samplewidth_list", help="", default=None)
 parser.add_argument("--geno_list", help="", default=None)
 parser.add_argument(
-    "--training_mean_sd", help="list of tree sequences used for training", default=None
+    "--training_params", help="params used in training: sigma mean and sd, max_n, num_snps", default=None
 )
 parser.add_argument(
     "--learning_rate",
@@ -286,7 +282,7 @@ def make_generator_params_dict(
         "sample_widths": sample_widths,
         "genos": genos,
         "preprocessed": args.preprocessed,
-        "num_boot": args.num_boot
+        "num_reps": args.num_reps
     }
     return params
 
@@ -309,7 +305,7 @@ def prep_trees_and_train():
     # normalize targets
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
-    np.save(f"{args.out}_training_mean_sd", [meanSig,sdSig])    
+    np.save(f"{args.out}_training_params", [meanSig,sdSig,args.max_n,args.num_snps])    
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
 
@@ -374,7 +370,7 @@ def prep_preprocessed_and_train():
     # normalize targets                                                              
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
-    np.save(f"{args.out}_training_mean_sd", [meanSig,sdSig])    
+    np.save(f"{args.out}_training_params", [meanSig,sdSig,args.max_n,args.num_snps])    
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
         
@@ -431,7 +427,9 @@ def prep_preprocessed_and_train():
 def prep_empirical_and_pred():
 
     # grab mean and sd from training distribution                                 
-    meanSig, sdSig = np.load(args.training_mean_sd)
+    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+    args.max_n = int(args.max_n)
+    args.num_snps = int(args.num_snps)
 
     # project locs
     locs = read_locs(args.empirical + ".locs")
@@ -445,7 +443,7 @@ def prep_empirical_and_pred():
     model, checkpointer, earlystop, reducelr = load_network()
 
     # convert vcf to geno matrix
-    for i in range(args.num_boot):
+    for i in range(args.num_reps):
         test_genos = vcf2genos(
             args.empirical + ".vcf", args.max_n, args.num_snps, args.phase
         )
@@ -455,7 +453,7 @@ def prep_empirical_and_pred():
         )
         dataset = args.empirical + "_" + str(i)
         prediction = model.predict([test_genos, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset, out_file) 
+        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset) 
 
     return
 
@@ -463,7 +461,9 @@ def prep_empirical_and_pred():
 def prep_preprocessed_and_pred():
    
     # grab mean and sd from training distribution                                 
-    meanSig, sdSig = np.load(args.training_mean_sd)
+    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+    args.max_n = int(args.max_n)
+    args.num_snps = int(args.num_snps)
 
     # load inputs
     targets = read_single_value(args.target_list)
@@ -501,7 +501,9 @@ def prep_preprocessed_and_pred():
 def prep_trees_and_pred():
 
     # grab mean and sd from training distribution                                 
-    meanSig, sdSig = np.load(args.training_mean_sd)
+    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+    args.max_n = int(args.max_n)
+    args.num_snps = int(args.num_snps)
 
     # tree sequences                                                
     trees = read_dict(args.tree_list)
@@ -546,8 +548,8 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names)
         with open(f"{args.out}_predictions.txt", "w") as out_f:
             raes = []
             for i in range(args.num_pred):
-                for r in range(args.num_boot):
-                    pred_index = r + (i*args.num_boot)
+                for r in range(args.num_reps):
+                    pred_index = r + (i*args.num_reps)
                     trueval = float(targets[simids[i]])
                     prediction = predictions[pred_index][0]
                     prediction = (prediction * sdSig) + meanSig

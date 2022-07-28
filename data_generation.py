@@ -36,7 +36,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     sample_widths: dict
     genos: dict
     preprocessed: bool
-    num_boot: int
+    num_reps: int
 
     def __attrs_post_init__(self):
         "Initialize a few things"
@@ -135,9 +135,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         alive_inds = []
         for i in ts.individuals():
             alive_inds.append(i.id)
-        print(f"Number of trees with only one root: {sum([t.num_roots == 1 for t in ts.trees()])}\n"
-              f"Number with more than one root: {sum([t.num_roots > 0 for t in ts.trees()])}")
-
         if self.recapitate == "True":
             Ne = len(alive_inds)
             if ts.num_populations > 1:
@@ -151,9 +148,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                     start_time=ts.metadata["SLiM"]["generation"],
                     random_seed=seed,                       
             )                                                    
-        print(f"Number of trees with only one root: {sum([t.num_roots == 1 for t in ts.trees()])}\n"
-              f"Number with more than one root: {sum([t.num_roots > 0 for t in ts.trees()])}")
-
+        
         # crop map
         if self.sampling_width != None:
             sample_width = (float(self.sampling_width) * W) - (edge_width * 2)
@@ -199,11 +194,10 @@ class DataGenerator(tf.keras.utils.Sequence):
             keep_nodes.extend(ind.nodes)
 
         # simplify
-        sys.stdout.flush()
         ts = ts.simplify(keep_nodes)
 
         # mutate
-        if self.num_boot == 1:
+        if self.num_reps == 1:
             total_snps = self.num_snps
         else:
             total_snps = self.num_snps * 10 # arbitrary size of SNP table for bootstraps
@@ -299,7 +293,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         # sample SNPs for 'b' bootstrap replicates:
         geno_mat_all = [] # this array will hold lots of pre-processed tensors from bootstrap reps
         sample_width_all = []
-        for b in range(self.num_boot):
+        for b in range(self.num_reps):
             mask = [True] * self.num_snps + [False] * (total_snps - self.num_snps)
             np.random.shuffle(mask)
             geno_mat1 = geno_mat0[mask, :]
@@ -324,17 +318,17 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # Initialization
         X1 = np.empty(
-            (self.batch_size*self.num_boot, self.num_snps, self.max_n * self.phase), dtype="int8"
+            (self.batch_size*self.num_reps, self.num_snps, self.max_n * self.phase), dtype="int8"
         )  # genos
-        X2 = np.empty((self.batch_size*self.num_boot,))  # sample widths
-        y = np.empty((self.batch_size*self.num_boot), dtype=float)  # targets 
+        X2 = np.empty((self.batch_size*self.num_reps,))  # sample widths
+        y = np.empty((self.batch_size*self.num_reps), dtype=float)  # targets 
 
         if self.preprocessed == False:
             ts_list = []
             for i, ID in enumerate(list_IDs_temp):
                 ts_list.append(self.trees[ID])
-                for rep in range(self.num_boot):
-                    y[rep+(i*self.num_boot)] = self.targets[ID]
+                for rep in range(self.num_reps):
+                    y[rep+(i*self.num_reps)] = self.targets[ID]
             seeds = np.random.randint(1e9, size=(self.batch_size))
             pool = multiprocessing.Pool(self.threads, maxtasksperchild=1)
             batch = pool.starmap(
@@ -343,8 +337,8 @@ class DataGenerator(tf.keras.utils.Sequence):
 
             # unpack the multiprocess output                                             
             for k in range(self.batch_size): 
-                for r in range(self.num_boot):
-                    est_index = r + (k*self.num_boot)
+                for r in range(self.num_reps):
+                    est_index = r + (k*self.num_reps)
                     X1[est_index, :] = batch[k][0][r]
                     X2[est_index] = batch[k][1][r]
             X = [X1, X2]

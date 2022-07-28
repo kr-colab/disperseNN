@@ -19,12 +19,17 @@ def check_params(args):
 
     # required arguments for training
     if args.train == True:
-        pass
+        if args.num_snps == None:
+            print("specify num snps via --num_snps")
+            exit()
+        if args.max_n == None:
+            print("specify max sample size via --max_n")
+            exit()
 
     # required arguments for prediction
     if args.predict == True:
-        if args.training_mean_sd == None:
-            print("specify training mean and sd via --training_mean_sd")
+        if args.training_params == None:
+            print("specify params file via --training_params")
             exit()
 
     # check some other param combinations
@@ -57,5 +62,9 @@ def check_params(args):
             "\n\nIf W and S are fixed, you must also fix the edge_width; otherwise the CNN can see sigma directly in the fourth input\n\n"
         )
         exit()
-                
+    if args.predict == True and args.preprocessed == False  and args.empirical == None:
+        if args.min_n == None:
+            print("missing min n, via --min_n")
+            exit()
+
 
