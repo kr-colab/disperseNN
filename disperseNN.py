@@ -282,7 +282,7 @@ def make_generator_params_dict(
         "sample_widths": sample_widths,
         "genos": genos,
         "preprocessed": args.preprocessed,
-        "num_reps": args.num_reps
+        "num_reps": args.num_reps,
     }
     return params
 

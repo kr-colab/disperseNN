@@ -212,7 +212,6 @@ python disperseNN.py \
   --out Temp_wd/out1 \
   --seed 12345 \
   --threads 1 \
-  --gpu_index -1
 ```
 
 - `max_n`: paired with `min_n` to describe the range of sample sizes to drawn from. Set `min_n` equal to `max_n` to use a fixed sample size.
@@ -220,9 +219,7 @@ python disperseNN.py \
 - `max_epochs`: for training
 - `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. Note: this is different than `num_reps` and `num_pred`.
 - `threads`: number of threads to use for multiprocessing.
-- `gpu_index` : use this flag to specify a GPU number.
-To avoid using available GPUs, skip this flag or say `--gpu_index -1`.
-To use any available GPU say `--gpu_index any`.
+
 
 
 
@@ -289,7 +286,7 @@ Given the strict format of the input files, we do not recommend users attempt to
 ### Custom simulations
 
 Next, we will analyze a theoretical population of *Internecivus raptus*.
-Let's assume we have independent estimates from previous studies for the size of the species range and the population density: these values are 50x50 km^2, and 4 individuals per square km, respectively.
+Let's assume we have independent estimates from previous studies for the size of the species range and the population density: these values are 50x50 km^2, and 6 individuals per square km, respectively.
 With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;.
 Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
 
@@ -300,7 +297,7 @@ mkdir Temp_wd/TreeSeqs
 for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
-    echo "slim -d SEED=$i -d sigma=$sigma -d K=4 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'Temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> Temp_wd/sim_commands.txt
+    echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'Temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> Temp_wd/sim_commands.txt
     echo Temp_wd/TreeSeqs/output_$i.trees >> Temp_wd/tree_list.txt
 done
 parallel -j 20 < Temp_wd/sim_commands.txt
@@ -341,11 +338,10 @@ python disperseNN.py \
   --sampling_width 1 \
   --num_samples 10 \
   --batch_size 20 \
-  --threads 40 \
+  --threads 1 \
   --max_epochs 1 \
   --out Temp_wd/out2 \
   --seed 12345 \
-  --gpu_index any
 ```
 
 Note: here we chose to sample away from the habitat edges by 1.5km.
@@ -438,12 +434,27 @@ python disperseNN.py \
   --load_weights Temp_wd/out2_model.hdf5 \
   --training_params Temp_wd/out2_training_params.npy \
   --empirical Temp_wd/iraptus \
-  --num_reps 100 \
+  --num_reps 10 \
   --out Temp_wd/out3 \
   --seed 12345
 ```
 
 Note: `num_reps`, here, specifies how many bootstrap replicates to perform, that is, how many seperate draws of 1000 SNPs to use as inputs for prediction.
+
+The final empirical results are stored in: Temp_wd/out3_predictions.txt
+
+```bash
+Temp_wd/iraptus_0 0.4790744392
+Temp_wd/iraptus_1 0.4782159438
+Temp_wd/iraptus_2 0.4752711311
+Temp_wd/iraptus_3 0.4757308299
+Temp_wd/iraptus_4 0.4763104592
+Temp_wd/iraptus_5 0.4740976943
+Temp_wd/iraptus_6 0.4711097443
+Temp_wd/iraptus_7 0.4765035801
+Temp_wd/iraptus_8 0.4711986949
+Temp_wd/iraptus_9 0.4780693254
+```
 
 ## References
 
