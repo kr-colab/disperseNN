@@ -6,12 +6,15 @@ from geopy import distance
 import random
 
 # get sampling width
+
+
 def project_locs(coords):
-    n =len(coords)
+    n = len(coords)
     sampling_width = 0
-    for i in range(0,n-1):
-        for j in range(i+1,n):
-            d = distance.distance(coords[i,:], coords[j,:]).km # ellipsoid='WGS-84' by default
+    for i in range(0, n-1):
+        for j in range(i+1, n):
+            # ellipsoid='WGS-84' by default
+            d = distance.distance(coords[i, :], coords[j, :]).km
             if d > sampling_width:
                 sampling_width = float(d)
     return sampling_width
@@ -38,7 +41,7 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
             pass
         elif line[0] == "#":
             header = line.strip().split("\t")
-            if max_n == None: # option for getting sample size from vcf
+            if max_n == None:  # option for getting sample size from vcf
                 max_n = len(header)-9
         else:
             newline = line.strip().split("\t")
@@ -47,14 +50,14 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
                 geno = newline[field].split(":")[0].split("/")
                 geno = [int(geno[0]), int(geno[1])]
                 if phase == 1:
-                    genos.append(sum(geno)) 
+                    genos.append(sum(geno))
                 elif phase == 2:
                     genos.append(geno[0])
                     genos.append(geno[1])
                 else:
                     print("problem")
                     exit()
-            for i in range((max_n * phase) - len(genos)): # pad with 0s
+            for i in range((max_n * phase) - len(genos)):  # pad with 0s
                 genos.append(0)
             geno_mat.append(genos)
 
@@ -68,35 +71,32 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
 
     # sample snps
     geno_mat = np.array(geno_mat)
-    mask = [True] * num_snps + [False] * (geno_mat.shape[0] - num_snps)
-    np.random.shuffle(mask)
-    geno_mat = geno_mat[mask, :]
-
-    return geno_mat
+    return np.random.choice(geno_mat, num_snps, replace=False)
 
 
-# calculate isolation by distance                                                                           
+# calculate isolation by distance
 def ibd(genos, coords, phase, num_snps):
 
-    # subset for n samples (avoiding padding-zeros)                                                         
-    n=0
+    # subset for n samples (avoiding padding-zeros)
+    n = 0
     for i in range(genos.shape[1]):
         reverse_index = genos.shape[1]-i-1
-        if len(set(genos[:,reverse_index])) > 1:
+        if len(set(genos[:, reverse_index])) > 1:
             n += reverse_index
             break
-    n+=1 # for 0 indexing                                                                                   
+    n += 1  # for 0 indexing
     if phase == 2:
         n = int(n/2)
-    genos = genos[:,0:n*phase] ### *** maybe don't need to subset, as long as we know n?
+    # *** maybe don't need to subset, as long as we know n?
+    genos = genos[:, 0:n*phase]
 
-    # if collapsed genos, make fake haplotypes for calculating Rousset's statistic                           
+    # if collapsed genos, make fake haplotypes for calculating Rousset's statistic
     if phase == 1:
         geno_mat2 = []
         for i in range(genos.shape[1]):
-            geno1,geno2 = [],[]
+            geno1, geno2 = [], []
             for s in range(genos.shape[0]):
-                combined_geno = genos[s,i]
+                combined_geno = genos[s, i]
                 if combined_geno == 0.0:
                     geno1.append(0)
                     geno2.append(0)
@@ -104,8 +104,9 @@ def ibd(genos, coords, phase, num_snps):
                     geno1.append(1)
                     geno2.append(1)
                 elif combined_geno == 1:
-                    alleles = [0,1]
-                    geno1.append(alleles.pop(random.choice([0,1]))) # assign random allele to each haplotype
+                    alleles = [0, 1]
+                    # assign random allele to each haplotype
+                    geno1.append(alleles.pop(random.choice([0, 1])))
                     geno2.append(alleles[0])
                 else:
                     print("bug", combined_geno)
@@ -115,62 +116,65 @@ def ibd(genos, coords, phase, num_snps):
         geno_mat2 = np.array(geno_mat2)
         genos = geno_mat2.T
 
-    # denominator for "a"                                                               
+    # denominator for "a"
     locus_specific_denominators = np.zeros((num_snps))
-    P = (n*(n-1))/2 # number of pairwise comparisons                                    
-    for i1 in range(0,n-1):
-        X11 = genos[:,i1*2]
-        X12 = genos[:,i1*2+1]
-        X1_ave = (X11+X12)/2 # average allelic does within individual-i                 
+    P = (n*(n-1))/2  # number of pairwise comparisons
+    for i1 in range(0, n-1):
+        X11 = genos[:, i1*2]
+        X12 = genos[:, i1*2+1]
+        X1_ave = (X11+X12)/2  # average allelic does within individual-i
         for i2 in range(i1+1, n):
-            X21 = genos[:,i2*2]
-            X22 = genos[:,i2*2+1]
+            X21 = genos[:, i2*2]
+            X22 = genos[:, i2*2+1]
             X2_ave = (X21+X22)/2
-            #                                                                           
-            SSw = (X11-X1_ave)**2 + (X12-X1_ave)**2 + (X21-X2_ave)**2 + (X22-X2_ave)**2
+            #
+            SSw = (X11-X1_ave)**2 + (X12-X1_ave)**2 + \
+                (X21-X2_ave)**2 + (X22-X2_ave)**2
             locus_specific_denominators += SSw
     locus_specific_denominators = locus_specific_denominators / (2*P)
     denominator = np.sum(locus_specific_denominators)
 
-    # numerator for "a"                                                                 
+    # numerator for "a"
     gendists = []
-    for i1 in range(0,n-1):
-        X11 = genos[:,i1*2]
-        X12 = genos[:,i1*2+1]
-        X1_ave = (X11+X12)/2 # average allelic does within individual-i                 
+    for i1 in range(0, n-1):
+        X11 = genos[:, i1*2]
+        X12 = genos[:, i1*2+1]
+        X1_ave = (X11+X12)/2  # average allelic does within individual-i
         for i2 in range(i1+1, n):
-            X21 = genos[:,i2*2]
-            X22 = genos[:,i2*2+1]
+            X21 = genos[:, i2*2]
+            X22 = genos[:, i2*2+1]
             X2_ave = (X21+X22)/2
-            #                                                                           
-            SSw = (X11-X1_ave)**2 + (X12-X1_ave)**2 + (X21-X2_ave)**2 + (X22-X2_ave)**2
-            Xdotdot = (X11+X12+X21+X22)/4 # average allelic dose for the pair           
-            SSb = (X1_ave-Xdotdot)**2 + (X2_ave-Xdotdot)**2 # a measure of between indiv
+            #
+            SSw = (X11-X1_ave)**2 + (X12-X1_ave)**2 + \
+                (X21-X2_ave)**2 + (X22-X2_ave)**2
+            Xdotdot = (X11+X12+X21+X22)/4  # average allelic dose for the pair
+            # a measure of between indiv
+            SSb = (X1_ave-Xdotdot)**2 + (X2_ave-Xdotdot)**2
             locus_specific_numerators = ((2*SSb)-SSw) / 4
             numerator = np.sum(locus_specific_numerators)
             a = numerator/denominator
             gendists.append(a)
 
-    # geographic distance                                                         
+    # geographic distance
     geodists = []
-    for i in range(0,n-1):
-        for j in range(i+1,n):
-            d = distance.distance(coords[i,:], coords[j,:]).km
+    for i in range(0, n-1):
+        for j in range(i+1, n):
+            d = distance.distance(coords[i, :], coords[j, :]).km
             d = np.log(d)
             geodists.append(d)
 
-    # regression                                                                  
+    # regression
     from scipy import stats
     geodists = np.array(geodists)
     gendists = np.array(gendists)
-    b = stats.linregress(geodists,gendists)[0]
-    r = stats.pearsonr(geodists,gendists)[0]
+    b = stats.linregress(geodists, gendists)[0]
+    r = stats.pearsonr(geodists, gendists)[0]
     r2 = r**2
     Nw = (1 / b)
-    print("IBD r, r^2, slope, Nw:",r,r2,b,Nw)
+    print("IBD r, r^2, slope, Nw:", r, r2, b, Nw)
 
 
-### main
+# main
 def main():
     vcf_path = sys.argv[1]
     max_n = sys.argv[2]
@@ -183,6 +187,7 @@ def main():
     phase = int(sys.argv[5])
     geno_mat = vcf2genos(vcf_path, max_n, num_snps, phase)
     np.save(outname + ".genos", geno_mat)
+
 
 if __name__ == "__main__":
     main()
