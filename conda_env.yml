@@ -1,0 +1,20 @@
+name: disperseNN
+channels:
+  - conda-forge
+  - anaconda
+  - bioconda
+dependencies:
+  - numpy
+  - pandas
+  - slim
+  - pyslim
+  - geopy
+  - attrs
+  - scikit-learn
+  - tensorflow-gpu
+  - gpustat
+  - pip
+  - pip:
+      # works for regular pip packages
+      - msprime>=1.1.1
+      - tskit>=0.4.1

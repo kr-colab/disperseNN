@@ -16,10 +16,11 @@
     - [Empirical inference](#empirical-inference)
   - [References](#references)
 
-`disperseNN` is a Machine Learning framework to predict &#963;, the expected per generation displacement distance between offspring and their parent(s), where training data is generated from simulations over a broad range of parameters.
+`disperseNN` is a Machine Learning framework to predict &#963;, the expected per generation displacement distance between offspring and their parent(s), from genetic variation data.
+`disperseNN` uses training data generated from simulations over a broad range of parameters.
 See [Smith et al.](https://kr-colab.github.io/) for a comprehensive description of the method.
 
-## Install requirements *** GPUs currently not working for me
+## Install requirements
 
 First clone this repository:
 
@@ -28,34 +29,17 @@ git clone https://github.com/chriscrsmith/disperseNN.git
 cd disperseNN/
 ```
 
-Dependencies can be installed with:
+Next create a `conda` environment using our provided `yaml` file. 
+This will create a virtual environment, and then install all the
+dependencies. Should work with `mamba` too!
 
 ```bash
-pip install -r requirements.txt
+conda env create -f conda_env.yml
 ```
 
-You will also need to install SLiM v3.7, in order to run sims and to follow along in the below Vignette.
-[See install instructions here](https://messerlab.org/slim/)
-
-Alternatively, all dependencies including SLiM can be installed in a new conda environment using:
-
+After `conda` has done its thing, activate the new environment
+to use `disperseNN`
 ```bash
-conda create \
-  -n disperseNN \
-  -c conda-forge \
-  -c anaconda \
-  -c bioconda \
-  pip \
-  tensorflow \
-  numpy \
-  slim \
-  pyslim \
-  msprime \
-  tskit \
-  geopy \
-  attrs \
-  scikit-learn 
-
 conda activate disperseNN
 ```
 
@@ -65,7 +49,7 @@ conda activate disperseNN
 
 ### 1. prediction
 
-  Command line flag:  --predict
+  Command line flag:  `--predict`
 
   Input types:
   * VCF
@@ -74,13 +58,13 @@ conda activate disperseNN
   
 ### 2. training
 
-  Command line flag:  --train
+  Command line flag:  `--train`
 
   Input types:  
   * tree sequences
   * pre-processed numpy arrays
 
-Within each mode- prediction or training- you may specify different types of input data, each requiring its own set of additional command line parameters; details below.
+Within each mode- `predict` or `train`- you may specify different types of input data, each requiring its own set of additional command line parameters; details below.
 
 ## Brief instructions with example commands
 
@@ -97,7 +81,7 @@ Last, a .locs file should be prepared with two columns corresponding to the lat.
 Before running any of the example commands, we recommend setting up a new working directory:
 
 ```bash
-mkdir -p Temp_wd/
+mkdir -p temp_wd/
 ```
 
 Below is an example command for estimating &#963; from a VCF file using a pre-trained model (should take <30s to run).
@@ -109,7 +93,7 @@ python disperseNN.py \
   --training_params Saved_models/out136_2400.12_training_params.npy \
   --empirical Examples/VCFs/halibut \
   --num_reps 10 \
-  --out Temp_wd/out_vcf \
+  --out temp_wd/out_vcf \
   --seed 12345
 ```
 
@@ -125,7 +109,7 @@ This number equals num_snps in the loaded model, but is probably fewer than the 
 - `out`: output prefix.
 - `seed`: random number seed.
 
-In addition to printing information about the model architecture to standard output, this command will also create a new file called `Temp_wd/out_vcf_predictions.txt`, containing:
+In addition to printing information about the model architecture to standard output, this command will also create a new file called `temp_wd/out_vcf_predictions.txt`, containing:
 
 ```bash
 Examples/VCFs/halibut_0 5.6412617497
@@ -149,7 +133,7 @@ If you want to predict &#963; in simulated tree sequences, such as those generat
 First make a file listing the paths to the tree sequences:
 
 ```bash
-ls Examples/TreeSeqs/*trees > Temp_wd/tree_list1.txt
+ls Examples/TreeSeqs/*trees > temp_wd/tree_list1.txt
 ```
 
 ```bash
@@ -157,7 +141,7 @@ python disperseNN.py \
   --predict \
   --load_weights Saved_models/out136_2400.12_model.hdf5 \
   --training_params Saved_models/out136_2400.12_training_params.npy \
-  --tree_list Temp_wd/tree_list1.txt \
+  --tree_list temp_wd/tree_list1.txt \
   --recapitate False \
   --mutate True \
   --min_n 90 \
@@ -165,7 +149,7 @@ python disperseNN.py \
   --sampling_width 1  \
   --batch_size 1 \
   --num_pred 3 \
-  --out Temp_wd/out_treeseq \
+  --out temp_wd/out_treeseq \
   --seed 12345 \
 ```
 
@@ -177,10 +161,12 @@ In addition to the flags already introduced in the VCF example, the additional f
 - `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, individuals are sampled edge_width distance from the sides of the map.
 - `sampling_width`: value in range (0,1), in proportion to the map width.
 - `batch_size`: for the data generator.
-- `num_pred`: this flag specifies how many simulations from the `tree_list` to predit with. Note: `--num_pred` is distinct from `--num_reps`; if you were to add the `-- `num_reps` flag to this command, the output would include repeated draws of 5,000 SNPs from each sample of `n` individuals. 
+- `num_pred`: this flag specifies how many simulations from the `tree_list` to predict with. 
+   Note: `--num_pred` is distinct from `--num_reps`; if you were to add the `--num_reps` 
+   flag to this command, the output would include repeated draws of 5,000 SNPs from each sample of `n` individuals. 
 
 
-Similar to the previous example, this will generate a file called `Temp_wd/out_treeseq_predictions.txt` containing:
+Similar to the previous example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
 
 ```bash
 Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 16.4714975747
@@ -198,7 +184,7 @@ This example uses tree sequences as input (runs for minutes to hours, depending 
 ```bash
 python disperseNN.py \
   --train \
-  --tree_list Temp_wd/tree_list1.txt \
+  --tree_list temp_wd/tree_list1.txt \
   --recapitate False \
   --mutate True \
   --min_n 10 \
@@ -209,7 +195,7 @@ python disperseNN.py \
   --num_samples 100 \
   --batch_size 10 \
   --max_epochs 10 \
-  --out Temp_wd/out1 \
+  --out temp_wd/out1 \
   --seed 12345 \
   --threads 1 \
 ```
@@ -230,20 +216,8 @@ python disperseNN.py \
 In some cases, the pre-trained model provided may not be appropriate for your data.
 In this case, it is possible to train new model from scratch from new a simulated training set.
 We use the SLiM recipe `SLiM_recipes/bat20.slim` to generate training data (tree sequences).
-The model is adapted from Battey et al. 2020.
-Certain model parameters are specified on the command line using this recipe.
-
-If SLiM is not installed on your system, install it with:
-
-```bash
-wget https://github.com/MesserLab/SLiM/releases/download/v3.7.1/SLiM.zip
-unzip SLiM.zip
-mkdir build
-cd build
-cmake ../SLiM
-make slim
-cd ../
-```
+The model is adapted from [Battey et al. (2020)](https://doi.org/10.1534/genetics.120.303143),
+but certain model parameters are specified on the command line.
 
 As a demonstration, see the below example command:
 
@@ -256,7 +230,7 @@ slim -d SEED=12345 \
      -d W=50 \
      -d G=1e8 \
      -d maxgens=100000 \
-     -d OUTNAME="'Temp_wd/output'" \
+     -d OUTNAME="'temp_wd/output'" \
      SLiM_recipes/bat20.slim
        # Note the two sets of quotes around the output name
 ```
@@ -285,25 +259,27 @@ Given the strict format of the input files, we do not recommend users attempt to
 
 ### Custom simulations
 
-Next, we will analyze a theoretical population of *Internecivus raptus*.
-Let's assume we have independent estimates from previous studies for the size of the species range and the population density: these values are 50x50 km^2, and 6 individuals per square km, respectively.
-With values for these nuisance parameters in hand we can design custom training simulations for analyzing &#963;.
-Furthermore, our *a prior* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation; we want to explore potential dispersal rates in this range.
+Next, we will analyze a theoretical population of *Internecivus raptus* 😱.
+Let's assume we have independent estimates from previous studies for the size 
+of the species range and the population density: these values are 50x50 km^2, and 6 individuals per square km, respectively.
+With values for these nuisance parameters in hand we can design custom training simulations for inferring &#963;.
+Lets assume our *a priori* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation;
+we want to explore potential dispersal rates in this range.
 
 Below is some bash code to run the simulations (runs for a few minutes, to an hour, depending on threads):
 
 ```bash
-mkdir Temp_wd/TreeSeqs
+mkdir temp_wd/TreeSeqs
 for i in {1..100}
 do
     sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
-    echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'Temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> Temp_wd/sim_commands.txt
-    echo Temp_wd/TreeSeqs/output_$i.trees >> Temp_wd/tree_list.txt
+    echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> temp_wd/sim_commands.txt
+    echo temp_wd/TreeSeqs/output_$i.trees >> temp_wd/tree_list.txt
 done
-parallel -j 20 < Temp_wd/sim_commands.txt
+parallel -j 20 < temp_wd/sim_commands.txt
 ```
 
-Note: the carrying capacity in this model, K, corresponds roughly to density, but the actual density will fluctuate a bit.
+Note: the carrying capacity in this model, `K`, corresponds roughly to density, but the actual density will fluctuate a bit.
 
 
 
@@ -313,8 +289,8 @@ Before proceeding, we will separate the sims into two groups: (i) training data 
 The latter portion will be held out for testing, later.
 
 ```bash
-head -50 Temp_wd/tree_list.txt > Temp_wd/training_trees.txt
-tail -50 Temp_wd/tree_list.txt > Temp_wd/test_trees.txt
+head -50 temp_wd/tree_list.txt > temp_wd/training_trees.txt
+tail -50 temp_wd/tree_list.txt > temp_wd/test_trees.txt
 ```
 
 The training step is computationally intensive and should ideally be run on a computing cluster or cloud system.
@@ -333,14 +309,14 @@ python disperseNN.py \
   --num_snps 1000 \
   --recapitate True \
   --mutate True \
-  --tree_list Temp_wd/training_trees.txt \
+  --tree_list temp_wd/training_trees.txt \
   --edge_width 1.5 \
   --sampling_width 1 \
   --num_samples 10 \
   --batch_size 20 \
   --threads 1 \
   --max_epochs 1 \
-  --out Temp_wd/out2 \
+  --out temp_wd/out2 \
   --seed 12345 \
 ```
 
@@ -358,34 +334,34 @@ This command will use a similar set of flags to the above example "Prediction: t
 ```bash
 python disperseNN.py \
   --predict \
-  --load_weights Temp_wd/out2_model.hdf5 \
-  --training_params Temp_wd/out2_training_params.npy \
+  --load_weights temp_wd/out2_model.hdf5 \
+  --training_params temp_wd/out2_training_params.npy \
   --recapitate True \
   --mutate True \
-  --tree_list Temp_wd/test_trees.txt \
+  --tree_list temp_wd/test_trees.txt \
   --min_n 14 \
   --edge_width 1.5 \
   --sampling_width 1 \
   --num_pred 10 \
   --batch_size 10 \
   --threads 1 \
-  --out Temp_wd/out2 \
+  --out temp_wd/out2 \
   --seed 12345
 ```
 
-The output file `Temp_wd/out2_sigma_predictions.txt` shows that our estimates are accurate***, therefore `disperseNN` was successful at learning to estimate &#963;.
+The output file `temp_wd/out2_sigma_predictions.txt` shows that our estimates are accurate***, therefore `disperseNN` was successful at learning to estimate &#963;.
 
 ```bash
-Temp_wd/TreeSeqs/output_51.trees 1.13122562 0.51208142
-Temp_wd/TreeSeqs/output_52.trees 0.3823590837 0.4942408277
-Temp_wd/TreeSeqs/output_53.trees 0.41219539 0.5039974494
-Temp_wd/TreeSeqs/output_54.trees 0.4901229428 0.5056558093
-Temp_wd/TreeSeqs/output_55.trees 0.2506551389 0.4867979277
-Temp_wd/TreeSeqs/output_56.trees 0.2303818449 0.4834368114
-Temp_wd/TreeSeqs/output_57.trees 1.0009738369 0.5087425838
-Temp_wd/TreeSeqs/output_58.trees 1.1115748604 0.5073908072
-Temp_wd/TreeSeqs/output_59.trees 0.5463572066 0.5131512291
-Temp_wd/TreeSeqs/output_60.trees 1.2719527705 0.5090078776
+temp_wd/TreeSeqs/output_51.trees 1.13122562 0.51208142
+temp_wd/TreeSeqs/output_52.trees 0.3823590837 0.4942408277
+temp_wd/TreeSeqs/output_53.trees 0.41219539 0.5039974494
+temp_wd/TreeSeqs/output_54.trees 0.4901229428 0.5056558093
+temp_wd/TreeSeqs/output_55.trees 0.2506551389 0.4867979277
+temp_wd/TreeSeqs/output_56.trees 0.2303818449 0.4834368114
+temp_wd/TreeSeqs/output_57.trees 1.0009738369 0.5087425838
+temp_wd/TreeSeqs/output_58.trees 1.1115748604 0.5073908072
+temp_wd/TreeSeqs/output_59.trees 0.5463572066 0.5131512291
+temp_wd/TreeSeqs/output_60.trees 1.2719527705 0.5090078776
 ```
 
 
@@ -399,29 +375,30 @@ This means applying basic filters (e.g. removing indels and non-variants sites) 
 Separately, we want a .locs file with the same prefix as the .vcf.
 
 For demonstration purposes, let's say we want to take a subset of individuals from a particular geographic region, the Scotian Shelf region.
-Furthermore, we want to include only a single individual per sampling location; this is important because individuals did not have identical locations in the training simulations, which might trip up the neural network.
+Furthermore, we want to include only a single individual per sampling location; this is important because individuals did not have identical
+locations in the training simulations, which might trip up the neural network.
 Below are some example commands that might be used to parse the metadata, but these steps will certainly be different for other empirical tables.
 
 ```bash
 # [these commands are gross; but I want to eventually switch over to simulated data, so these steps will change]
-cat Examples/VCFs/iraptus_meta_full.txt | grep "Scotian Shelf - East" | cut -f 4,5 | sort | uniq > Temp_wd/templocs
-count=$(wc -l Temp_wd/templocs | awk '{print $1}')
-for i in $(seq 1 $count); do locs=$(head -$i Temp_wd/templocs | tail -1); lat=$(echo $locs | awk '{print $1}'); long=$(echo $locs | awk '{print $2}'); grep $lat Examples/VCFs/iraptus_meta_full.txt | awk -v coord=$long '$5 == coord' | shuf | head -1; done > Temp_wd/iraptus_meta.txt
-cat Temp_wd/iraptus_meta.txt  | sed s/"\t"/,/g > Temp_wd/iraptus.csv
+cat Examples/VCFs/iraptus_meta_full.txt | grep "Scotian Shelf - East" | cut -f 4,5 | sort | uniq > temp_wd/templocs
+count=$(wc -l temp_wd/templocs | awk '{print $1}')
+for i in $(seq 1 $count); do locs=$(head -$i temp_wd/templocs | tail -1); lat=$(echo $locs | awk '{print $1}'); long=$(echo $locs | awk '{print $2}'); grep $lat Examples/VCFs/iraptus_meta_full.txt | awk -v coord=$long '$5 == coord' | shuf | head -1; done > temp_wd/iraptus_meta.txt
+cat temp_wd/iraptus_meta.txt  | sed s/"\t"/,/g > temp_wd/iraptus.csv
 ```
 
 We provide a simple python script for subsetting a VCF for a particular set of individuals, which also filters indels and non-variant sites.
 
 ```bash
-python Empirical/subset_vcf.py Examples/VCFs/iraptus_full.vcf.gz Temp_wd/iraptus.csv Temp_wd/iraptus.vcf 0 1
+python Empirical/subset_vcf.py Examples/VCFs/iraptus_full.vcf.gz temp_wd/iraptus.csv temp_wd/iraptus.vcf 0 1
 ```
 
 Last, build a .locs file:
 
 ```bash
-count=$(zcat Temp_wd/iraptus.vcf.gz | grep -v "##" | grep "#" | wc -w)
-for i in $(seq 10 $count); do id=$(zcat Temp_wd/iraptus.vcf.gz | grep -v "##" | grep "#" | cut -f $i); grep -w $id Temp_wd/iraptus.csv; done | cut -d "," -f 4,5 | sed s/","/"\t"/g > Temp_wd/iraptus.locs
-gunzip Temp_wd/iraptus.vcf.gz
+count=$(zcat temp_wd/iraptus.vcf.gz | grep -v "##" | grep "#" | wc -w)
+for i in $(seq 10 $count); do id=$(zcat temp_wd/iraptus.vcf.gz | grep -v "##" | grep "#" | cut -f $i); grep -w $id temp_wd/iraptus.csv; done | cut -d "," -f 4,5 | sed s/","/"\t"/g > temp_wd/iraptus.locs
+gunzip temp_wd/iraptus.vcf.gz
 ```
 
 ### Empirical inference
@@ -431,29 +408,29 @@ Finally, we can predict predict &#963; from the subsetted VCF (should take less 
 ```bash
 python disperseNN.py \
   --predict \
-  --load_weights Temp_wd/out2_model.hdf5 \
-  --training_params Temp_wd/out2_training_params.npy \
-  --empirical Temp_wd/iraptus \
+  --load_weights temp_wd/out2_model.hdf5 \
+  --training_params temp_wd/out2_training_params.npy \
+  --empirical temp_wd/iraptus \
   --num_reps 10 \
-  --out Temp_wd/out3 \
+  --out temp_wd/out3 \
   --seed 12345
 ```
 
 Note: `num_reps`, here, specifies how many bootstrap replicates to perform, that is, how many seperate draws of 1000 SNPs to use as inputs for prediction.
 
-The final empirical results are stored in: Temp_wd/out3_predictions.txt
+The final empirical results are stored in: temp_wd/out3_predictions.txt
 
 ```bash
-Temp_wd/iraptus_0 0.4790744392
-Temp_wd/iraptus_1 0.4782159438
-Temp_wd/iraptus_2 0.4752711311
-Temp_wd/iraptus_3 0.4757308299
-Temp_wd/iraptus_4 0.4763104592
-Temp_wd/iraptus_5 0.4740976943
-Temp_wd/iraptus_6 0.4711097443
-Temp_wd/iraptus_7 0.4765035801
-Temp_wd/iraptus_8 0.4711986949
-Temp_wd/iraptus_9 0.4780693254
+temp_wd/iraptus_0 0.4790744392
+temp_wd/iraptus_1 0.4782159438
+temp_wd/iraptus_2 0.4752711311
+temp_wd/iraptus_3 0.4757308299
+temp_wd/iraptus_4 0.4763104592
+temp_wd/iraptus_5 0.4740976943
+temp_wd/iraptus_6 0.4711097443
+temp_wd/iraptus_7 0.4765035801
+temp_wd/iraptus_8 0.4711986949
+temp_wd/iraptus_9 0.4780693254
 ```
 
 ## References

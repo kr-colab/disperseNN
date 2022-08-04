@@ -8,6 +8,8 @@ from check_params import *
 from read_input import *
 from process_input import *
 from data_generation import DataGenerator
+import gpustat
+
 
 def load_dl_modules():
     print("loading bigger modules")
@@ -31,9 +33,12 @@ parser.add_argument(
     default=False,
     help="use preprocessed tensors, rather than tree sequences, as input",
 )
-parser.add_argument("--empirical", default=None, help="prefix for vcf and locs")
-parser.add_argument("--target_list", help="list of PNG filepaths.", default=None)
-parser.add_argument("--tree_list", help="list of tree filepaths.", default=None)
+parser.add_argument("--empirical", default=None,
+                    help="prefix for vcf and locs")
+parser.add_argument(
+    "--target_list", help="list of PNG filepaths.", default=None)
+parser.add_argument(
+    "--tree_list", help="list of tree filepaths.", default=None)
 parser.add_argument(
     "--edge_width",
     help="crop a fixed width from each edge of the map; enter 'sigma' to set edge_width equal to sigma ",
@@ -70,7 +75,8 @@ parser.add_argument(
     default=1e-15,
     type=float,
 )
-parser.add_argument("--rho", help="recombination rate", default=1e-8, type=float)
+parser.add_argument("--rho", help="recombination rate",
+                    default=1e-8, type=float)
 parser.add_argument(
     "--num_samples",
     default=1,
@@ -90,7 +96,8 @@ parser.add_argument(
     help="0-1, proportion of samples to use for validation. default: 0.2",
 )
 parser.add_argument("--batch_size", default=1, type=int, help="default: 1")
-parser.add_argument("--max_epochs", default=1000, type=int, help="default: 100")
+parser.add_argument("--max_epochs", default=1000,
+                    type=int, help="default: 100")
 parser.add_argument(
     "--patience",
     type=int,
@@ -114,7 +121,8 @@ parser.add_argument(
     "--out", help="file name stem for output", default=None, required=True
 )
 parser.add_argument("--seed", default=None, type=int, help="random seed.")
-parser.add_argument("--gpu_index", default="-1", type=str, help="index of gpu. To avoid GPUs, skip this flag or say '-1'. To use any available GPU say 'any' ")
+parser.add_argument("--gpu_index", default="-1", type=str,
+                    help="index of gpu. To avoid GPUs, skip this flag or say '-1'. To use any available GPU say 'any' ")
 parser.add_argument(
     "--load_weights",
     default=None,
@@ -174,8 +182,15 @@ def load_network():
     if args.seed is not None:
         np.random.seed(args.seed)
         tf.random.set_seed(args.seed)
-    if args.gpu_index != 'any': # 'any' will search for any available GPU
+    if args.gpu_index != 'any':  # 'any' will search for any available GPU
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_index
+    else:
+        stats = gpustat.GPUStatCollection.new_query()
+        ids = map(lambda gpu: int(gpu.entry['index']), stats)
+        ratios = map(lambda gpu: float(
+            gpu.entry['memory.used'])/float(gpu.entry['memory.total']), stats)
+        bestGPU = min(zip(ids, ratios), key=lambda x: x[1])[0]
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(bestGPU)
     tf.config.threading.set_intra_op_parallelism_threads(args.threads)
 
     # update conv+pool iterations based on number of SNPs
@@ -188,7 +203,8 @@ def load_network():
     pooling_size = 10
     filter_size = 64
 
-    geno_input = tf.keras.layers.Input(shape=(args.num_snps, args.max_n * args.phase))
+    geno_input = tf.keras.layers.Input(
+        shape=(args.num_snps, args.max_n * args.phase))
     h = tf.keras.layers.Conv1D(
         filter_size, kernel_size=conv_kernal_size, activation="relu"
     )(geno_input)
@@ -289,7 +305,7 @@ def make_generator_params_dict(
 
 def prep_trees_and_train():
 
-    # tree sequences                 
+    # tree sequences
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
 
@@ -297,27 +313,29 @@ def prep_trees_and_train():
     print("reading targets from tree sequences: this should take several minutes")
     targets = []
     for i in range(total_sims):
-        ts = tskit.load(trees[i]) ### *** can we access provenance without loading the whole tree sequence?
+        # *** can we access provenance without loading the whole tree sequence?
+        ts = tskit.load(trees[i])
         target = parse_provenance(ts, 'sigma')
         target = np.log(target)
         targets.append(target)
-        
+
     # normalize targets
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
-    np.save(f"{args.out}_training_params", [meanSig,sdSig,args.max_n,args.num_snps])    
+    np.save(f"{args.out}_training_params", [
+            meanSig, sdSig, args.max_n, args.num_snps])
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
 
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
-    train, val = train_test_split(sim_ids, test_size=args.validation_split)    
+    train, val = train_test_split(sim_ids, test_size=args.validation_split)
     if len(val)*args.num_samples % args.batch_size != 0 or len(train)*args.num_samples % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
         exit()
-    
+
     # organize "partitions" to hand to data generator
     partition = {}
     partition["train"] = []
@@ -358,7 +376,7 @@ def prep_trees_and_train():
 
 
 def prep_preprocessed_and_train():
-    
+
     # read targets
     print("loading input data; this could take a while if the lists are very long")
     print("\ttargets")
@@ -367,13 +385,14 @@ def prep_preprocessed_and_train():
     targets = np.log(targets)
     total_sims = len(targets)
 
-    # normalize targets                                                              
+    # normalize targets
     meanSig = np.mean(targets)
     sdSig = np.std(targets)
-    np.save(f"{args.out}_training_params", [meanSig,sdSig,args.max_n,args.num_snps])    
+    np.save(f"{args.out}_training_params", [
+            meanSig, sdSig, args.max_n, args.num_snps])
     targets = [(x - meanSig) / sdSig for x in targets]  # center and scale
     targets = dict_from_list(targets)
-        
+
     # other inputs
     print("\tsample_widths")
     sys.stderr.flush()
@@ -426,8 +445,8 @@ def prep_preprocessed_and_train():
 
 def prep_empirical_and_pred():
 
-    # grab mean and sd from training distribution                                 
-    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+    # grab mean and sd from training distribution
+    meanSig, sdSig, args.max_n, args.num_snps = np.load(args.training_params)
     args.max_n = int(args.max_n)
     args.num_snps = int(args.num_snps)
 
@@ -453,15 +472,15 @@ def prep_empirical_and_pred():
         )
         dataset = args.empirical + "_" + str(i)
         prediction = model.predict([test_genos, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset) 
+        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset)
 
     return
 
 
 def prep_preprocessed_and_pred():
-   
-    # grab mean and sd from training distribution                                 
-    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+
+    # grab mean and sd from training distribution
+    meanSig, sdSig, args.max_n, args.num_snps = np.load(args.training_params)
     args.max_n = int(args.max_n)
     args.num_snps = int(args.num_snps)
 
@@ -471,11 +490,13 @@ def prep_preprocessed_and_pred():
     targets = dict_from_list(targets)
     genos = read_dict(args.geno_list)
     sample_widths = load_single_value_dict(args.samplewidth_list)
-    file_names = read_dict(args.geno_list) # storing just the names, for output.
+    # storing just the names, for output.
+    file_names = read_dict(args.geno_list)
 
     # organize "partition" to hand to data generator
     partition = {}
-    simids = np.random.choice(np.arange(0, len(genos)), args.num_pred, replace=False)
+    simids = np.random.choice(np.arange(0, len(genos)),
+                              args.num_pred, replace=False)
     partition["prediction"] = simids
 
     # get generator ready
@@ -493,23 +514,24 @@ def prep_preprocessed_and_pred():
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
     predictions = model.predict_generator(generator)
-    unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names)
+    unpack_predictions(predictions, meanSig, sdSig,
+                       targets, simids, file_names)
 
     return
 
 
 def prep_trees_and_pred():
 
-    # grab mean and sd from training distribution                                 
-    meanSig,sdSig,args.max_n,args.num_snps = np.load(args.training_params)
+    # grab mean and sd from training distribution
+    meanSig, sdSig, args.max_n, args.num_snps = np.load(args.training_params)
     args.max_n = int(args.max_n)
     args.num_snps = int(args.num_snps)
 
-    # tree sequences                                                
+    # tree sequences
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
 
-    # read targets                                                                
+    # read targets
     print("reading true values from tree sequences: this should take several minutes")
     targets = []
     for i in range(total_sims):
@@ -520,19 +542,20 @@ def prep_trees_and_pred():
 
     # organize "partition" to hand to data generator
     partition = {}
-    simids = np.random.choice(np.arange(0, total_sims), args.num_pred, replace=False)
+    simids = np.random.choice(np.arange(0, total_sims),
+                              args.num_pred, replace=False)
     partition["prediction"] = simids
 
     # get generator ready
     params = make_generator_params_dict(
-        targets=[None]*total_sims, 
+        targets=[None]*total_sims,
         trees=trees,
         shuffle=False,
         genos=None,
         sample_widths=None,
     )
     generator = DataGenerator(partition["prediction"], **params)
-    
+
     # predict
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
@@ -555,9 +578,10 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names)
                     prediction = (prediction * sdSig) + meanSig
                     trueval = np.exp(trueval)
                     prediction = np.exp(prediction)
-                    rae = abs( (trueval - prediction) / trueval )
+                    rae = abs((trueval - prediction) / trueval)
                     raes.append(rae)
-                    print(file_names[i], np.round(trueval, 10), np.round(prediction, 10), file=out_f)
+                    print(file_names[i], np.round(trueval, 10),
+                          np.round(prediction, 10), file=out_f)
         print("mean RAE:", np.mean(raes))
     else:
         with open(f"{args.out}_predictions.txt", "a") as out_f:
@@ -570,11 +594,7 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names)
     return
 
 
-
-
-
 ### main ###
-
 # train
 if args.train == True:
     print("starting training pipeline")
