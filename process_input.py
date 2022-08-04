@@ -71,7 +71,7 @@ def vcf2genos(vcf_path, max_n, num_snps, phase):
 
     # sample snps
     geno_mat = np.array(geno_mat)
-    return np.random.choice(geno_mat, num_snps, replace=False)
+    return geno_mat[np.random.choice(geno_mat.shape[0], num_snps, replace=False), :]
 
 
 # calculate isolation by distance
