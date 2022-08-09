@@ -90,7 +90,6 @@ def parse_provenance(ts, param):
     prov = str(ts.provenance(0)).split()
     for i in range(len(prov)):
         if param+"=" in prov[i]:
-            #print(prov[i])
             val = float(prov[i].split("=")[1].split("\"")[0])
             break
     return(val)

@@ -17,7 +17,7 @@ def check_params(args):
             print("saved predictions with specified output name already exists (i.e. --out)")
             exit()
 
-    # required arguments for training
+    # arguments for training
     if args.train == True:
         if args.num_snps == None:
             print("specify num snps via --num_snps")
@@ -26,11 +26,22 @@ def check_params(args):
             print("specify max sample size via --max_n")
             exit()
 
-    # required arguments for prediction
+    # arguments for prediction
     if args.predict == True:
         if args.training_params == None:
             print("specify params file via --training_params")
             exit()
+
+    # arguments related to preprocessing
+    if args.preprocessed == True:
+        if args.num_rep > 1
+            print("can't bootstrap on preprocessed data, only tree sequences or VCF")
+            exit()
+    else:
+        if args.mutate == None:
+            print("specify whether or not to mutate the tree sequences")
+        elif args.recapitate == None:
+            print("specify whether or not to recapitate the tree sequences")
 
     # check some other param combinations
     if args.train == False and args.predict == False:

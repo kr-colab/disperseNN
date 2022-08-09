@@ -119,7 +119,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         "The meat: load in and fully process a tree sequence"
         
         # read input                        
-        print(filepath, seed)
         sys.stdout.flush()
         ts = tskit.load(filepath)
         np.random.seed(seed)
@@ -305,7 +304,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         return geno_mat_all, sample_width_all
 
 
-    def preprocess_sample_ts(self, geno_path): ### *** un-modularize this, now
+    def preprocess_sample_ts(self, geno_path): 
         "Seperate function for loading in pre-processed data"
         
         # read input

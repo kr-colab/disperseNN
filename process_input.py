@@ -87,8 +87,7 @@ def ibd(genos, coords, phase, num_snps):
     n += 1  # for 0 indexing
     if phase == 2:
         n = int(n/2)
-    # *** maybe don't need to subset, as long as we know n?
-    genos = genos[:, 0:n*phase]
+    genos = genos[:, 0:n*phase]  # *** maybe don't need to subset, as long as we know n?  
 
     # if collapsed genos, make fake haplotypes for calculating Rousset's statistic
     if phase == 1:

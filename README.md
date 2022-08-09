@@ -162,8 +162,6 @@ In addition to the flags already introduced in the VCF example, the additional f
 - `sampling_width`: value in range (0,1), in proportion to the map width.
 - `batch_size`: for the data generator.
 - `num_pred`: this flag specifies how many simulations from the `tree_list` to predict with. 
-   Note: `--num_pred` is distinct from `--num_reps`; if you were to add the `--num_reps` 
-   flag to this command, the output would include repeated draws of 5,000 SNPs from each sample of `n` individuals. 
 
 
 Similar to the previous example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
@@ -203,7 +201,7 @@ python disperseNN.py \
 - `max_n`: paired with `min_n` to describe the range of sample sizes to drawn from. Set `min_n` equal to `max_n` to use a fixed sample size.
 - `num_snps`: the number of SNPs to use as input for the CNN.
 - `max_epochs`: for training
-- `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. Note: this is different than `num_reps` and `num_pred`.
+- `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. 
 - `threads`: number of threads to use for multiprocessing.
 
 
@@ -272,7 +270,7 @@ Below is some bash code to run the simulations (runs for a few minutes, to an ho
 mkdir temp_wd/TreeSeqs
 for i in {1..100}
 do
-    sigma=$(python -c 'import numpy as np; print(np.random.uniform(0.2,1.5))')
+    sigma=$(python -c 'from scipy.stats import loguniform; print(loguniform.rvs(0.2,1.5))')
     echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> temp_wd/sim_commands.txt
     echo temp_wd/TreeSeqs/output_$i.trees >> temp_wd/tree_list.txt
 done

@@ -36,7 +36,7 @@ parser.add_argument(
 parser.add_argument("--empirical", default=None,
                     help="prefix for vcf and locs")
 parser.add_argument(
-    "--target_list", help="list of PNG filepaths.", default=None)
+    "--target_list", help="list of filepaths to targets (sigma).", default=None)
 parser.add_argument(
     "--tree_list", help="list of tree filepaths.", default=None)
 parser.add_argument(
@@ -93,11 +93,11 @@ parser.add_argument(
     "--validation_split",
     default=0.2,
     type=float,
-    help="0-1, proportion of samples to use for validation. default: 0.2",
+    help="0-1, proportion of samples to use for validation.",
 )
-parser.add_argument("--batch_size", default=1, type=int, help="default: 1")
+parser.add_argument("--batch_size", default=1, type=int, help="batch size for training")
 parser.add_argument("--max_epochs", default=1000,
-                    type=int, help="default: 100")
+                    type=int, help="max epochs for training")
 parser.add_argument(
     "--patience",
     type=int,
@@ -108,7 +108,7 @@ parser.add_argument(
     "--dropout",
     default=0,
     type=float,
-    help="proportion of weights to zero at the dropout layer. \default: 0",
+    help="proportion of weights to zero at the dropout layer.",
 )
 parser.add_argument(
     "--recapitate", type=str, help="recapitate on-the-fly; True or False"
@@ -153,14 +153,13 @@ parser.add_argument(
     type=int,
     help="verbose argument passed to keras in model training. \
                     0 = silent. 1 = progress bars for minibatches. 2 = show epochs. \
-                    Yes, 1 is more verbose than 2. Blame keras. \
-                    default: 1. ",
+                    Yes, 1 is more verbose than 2. Blame keras.",
 )
 parser.add_argument(
     "--threads",
     default=1,
     type=int,
-    help="num threads. default: all available CPU threads.",
+    help="num threads.",
 )
 parser.add_argument("--samplewidth_list", help="", default=None)
 parser.add_argument("--geno_list", help="", default=None)
