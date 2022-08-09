@@ -472,7 +472,7 @@ def prep_empirical_and_pred():
         )
         dataset = args.empirical + "_" + str(i)
         prediction = model.predict([test_genos, sampling_width])
-        unpack_predictions(prediction, meanSig, sdSig, None, dataset, dataset)
+        unpack_predictions(prediction, meanSig, sdSig, None, None, dataset)
 
     return
 
@@ -580,7 +580,7 @@ def unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names)
                     prediction = np.exp(prediction)
                     rae = abs((trueval - prediction) / trueval)
                     raes.append(rae)
-                    print(file_names[i], np.round(trueval, 10),
+                    print(file_names[simids[i]], np.round(trueval, 10),
                           np.round(prediction, 10), file=out_f)
         print("mean RAE:", np.mean(raes))
     else:
