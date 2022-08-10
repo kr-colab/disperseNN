@@ -74,7 +74,7 @@ conda activate disperseNN
   * tree sequences
   * pre-processed numpy arrays
 
-Within each mode- `predict` or `train`- you may specify different types of input data, each requiring its own set of additional command line parameters; details below.
+Within each mode- `predict` or `train`- you may specify different types of input data, each requiring its own set of additional command line parameters. More details are below.
 
 
 
@@ -150,7 +150,7 @@ We use the SLiM recipe `SLiM_recipes/bat20.slim` to generate training data (tree
 The model is adapted from [Battey et al. (2020)](https://doi.org/10.1534/genetics.120.303143),
 but certain model parameters are specified on the command line.
 
-As a demonstration, see the below example command:
+As a demonstration, see the below example command (this simulation may run for half an hour, but feel free to kill it with ctrl-C):
 
 ```bash
 slim -d SEED=12345 \
@@ -185,12 +185,12 @@ Given the strict format of the input files, we do not recommend users attempt to
 ### Training
 
 Below is an example command for the training step.
-This example uses tree sequences as input (runs for minutes to hours, depending on threads).
+This example uses tree sequences as input (again, feel free to kill this command. We don't need the output for any downstream commands).
 
 ```bash
 python disperseNN.py \
   --train \
-  --tree_list temp_wd/tree_list1.txt \
+  --tree_list Examples/tree_list1.txt \
   --recapitate False \
   --mutate True \
   --min_n 10 \
@@ -234,14 +234,14 @@ python disperseNN.py \
   --predict \
   --load_weights Saved_models/out136_2400.12_model.hdf5 \
   --training_params Saved_models/out136_2400.12_training_params.npy \
-  --tree_list temp_wd/tree_list1.txt \
+  --tree_list Examples/tree_list1.txt \
   --recapitate False \
   --mutate True \
   --min_n 10 \
   --edge_width 3 \
   --sampling_width 1  \
   --seed 12345 \
-  --out temp_wd/out_treeseq \
+  --out temp_wd/out_treeseq
 ```
 
 Similar to the earlier prediction example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:

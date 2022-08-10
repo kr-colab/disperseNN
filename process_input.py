@@ -170,7 +170,7 @@ def ibd(genos, coords, phase, num_snps):
     r = stats.pearsonr(geodists, gendists)[0]
     r2 = r**2
     Nw = (1 / b)
-    print("IBD r, r^2, slope, Nw:", r, r2, b, Nw)
+    print("IBD r^2, slope, Nw:", r2, b, Nw)
 
 
 # main

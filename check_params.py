@@ -40,8 +40,10 @@ def check_params(args):
     else:
         if args.mutate == None:
             print("specify whether or not to mutate the tree sequences")
+            exit()
         elif args.recapitate == None:
             print("specify whether or not to recapitate the tree sequences")
+            exit()
 
     # check some other param combinations
     if args.train == False and args.predict == False:
@@ -52,11 +54,12 @@ def check_params(args):
             print("sampling width as proportion, (0,1)")
             exit()
     if args.predict == True and args.empirical == None:
-        if args.num_pred % args.batch_size != 0:
-            print(
-                "\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
-            )
-            exit()
+        if args.num_pred != None:
+            if args.num_pred % args.batch_size != 0:
+                print(
+                    "\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
+                )
+                exit()
     if args.empirical == None and args.preprocessed == False:
         if args.edge_width == None:
             print("need to specify edge_width (via --edge_width)")
