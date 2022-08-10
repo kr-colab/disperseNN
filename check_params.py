@@ -34,7 +34,7 @@ def check_params(args):
 
     # arguments related to preprocessing
     if args.preprocessed == True:
-        if args.num_rep > 1:
+        if args.num_reps > 1:
             print("can't bootstrap on preprocessed data, only tree sequences or VCF")
             exit()
     else:
