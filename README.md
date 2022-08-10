@@ -3,11 +3,11 @@
 - [disperseNN](#dispersenn)
   - [Install requirements](#install-requirements)
   - [Overview](#overview)
-  - [Brief instructions with example commands](#brief-instructions-with-example-commands)
-    - [Prediction: using a VCF, sample locations, and a pre-trained model as inputs](#prediction-using-a-vcf-sample-locations-and-a-pre-trained-model-as-inputs)
-    - [Prediction: tree sequences as input](#prediction-tree-sequences-as-input)
-    - [Training: tree sequences as input](#training-tree-sequences-as-input)
+  - [The pre-trained model](#the-pre-trained-model)
+  - [Instructions with example commands](#instructions-with-example-commands)
     - [Simulation](#simulation)
+    - [Training](#training)
+    - [Prediction: tree sequences as input](#prediction-tree-sequences-as-input)
   - [Vignette: example workflow](#vignette-example-workflow)
     - [Custom simulations](#custom-simulations)
     - [Training](#training)
@@ -16,9 +16,13 @@
     - [Empirical inference](#empirical-inference)
   - [References](#references)
 
-`disperseNN` is a Machine Learning framework to predict &#963;, the expected per generation displacement distance between offspring and their parent(s), from genetic variation data.
-`disperseNN` uses training data generated from simulations over a broad range of parameters.
+`disperseNN` is a machine learning framework for predicting &#963;, the expected per generation displacement distance between offspring and their parent(s), from genetic variation data.
+`disperseNN` uses training data generated from simulations.
 See [Smith et al.](https://kr-colab.github.io/) for a comprehensive description of the method.
+
+
+
+
 
 ## Install requirements
 
@@ -43,42 +47,49 @@ to use `disperseNN`
 conda activate disperseNN
 ```
 
+
+
+
+
 ## Overview
 
 `disperseNN` has two modes:
 
-### 1. prediction
+
+### 1. Prediction
 
   Command line flag:  `--predict`
 
-  Input types:
+  Input options:
   * VCF
   * tree sequences
   * pre-processed numpy arrays
+
   
-### 2. training
+### 2. Training
 
   Command line flag:  `--train`
 
-  Input types:  
+  Input options:  
   * tree sequences
   * pre-processed numpy arrays
 
 Within each mode- `predict` or `train`- you may specify different types of input data, each requiring its own set of additional command line parameters; details below.
 
-## Brief instructions with example commands
 
-### Prediction: using a VCF, sample locations, and a pre-trained model as inputs
 
-While `disperseNN` can be trained from scratch, we recommend trying the pre-trained model provided in this repository first.
+
+
+## The pre-trained model
+While `disperseNN` can be trained from scratch, we recommend trying the pre-trained model provided in this repository first
+(see [Smith et al.](https://kr-colab.github.io/) for model details).
 Before handing an empirical VCF to `disperseNN`, it should undergo basic filtering steps to remove non-variant sites and indels; rare variants should be left in.
 Furthermore, the VCF should include only the individuals that you intend to analyze.
 At least 5,000 SNPs are required for the current model,
 but more than 5,000 SNPs can be left in the VCF because `disperseNN` will draw a random subset.
-Last, a .locs file should be prepared with two columns corresponding to the lat. and long. spatial coordinates for each individual.
+Last, a .locs file should be prepared with two columns corresponding to the latitude and longitude of each individual.
 
-
-Before running any of the example commands, we recommend setting up a new working directory:
+To run the example commands, begin by setting up a new working directory:
 
 ```bash
 mkdir -p temp_wd/
@@ -97,19 +108,17 @@ python disperseNN.py \
   --seed 12345
 ```
 
-
 Explanation of command line values:
-- `load_weights`: saved model or weights to load.
+- `load_weights`: this specifies the path to the saved model.
 The above command points to a particular pre-trained model, `out136_2400.12_model.hdf5`,
 but instructions for how to train a new model from scratch are described below.
 - `training_params`: a single file with several parameters used to train the above model. Included are: the mean and standard deviation used to normalize the training targets, and the number of SNPs and maximum sample size used to train the above model. In this case, the number of SNPs is 5,000 and the max sample size is 100.
-- `empirical`: this flag is specific to analyzing VCFs. Give it the shared prefix for the .vcf and .locs files (i.e. without '.vcf' or '.locs')
-This number equals num_snps in the loaded model, but is probably fewer than the VCF lines.
-- `num_reps`: number of repeated draws (of 5,000 SNPs in this case) from the VCF, with one prediction per subset.
+- `empirical`: this flag is specific to analyzing empirical VCFs. Give it the shared prefix for the .vcf and .locs files (i.e. without '.vcf' or '.locs')
+- `num_reps`: number of repeated draws (of 5,000 SNPs in this case) from the VCF, with a single prediction per subset.
 - `out`: output prefix.
 - `seed`: random number seed.
 
-In addition to printing information about the model architecture to standard output, this command will also create a new file called `temp_wd/out_vcf_predictions.txt`, containing:
+In addition to printing information about the model architecture to standard output, this command will also create a new file, `temp_wd/out_vcf_predictions.txt`, containing:
 
 ```bash
 Examples/VCFs/halibut_0 5.6412617497
@@ -126,93 +135,17 @@ Examples/VCFs/halibut_9 6.2295782895
 
 Where each line is one of the 10 predictions of &#963; using a random subset of 5K SNPs.
 
-### Prediction: tree sequences as input
-
-If you want to predict &#963; in simulated tree sequences, such as those generated by `msprime` and `SLiM`, an example command is (should take <30s to run):
-
-First make a file listing the paths to the tree sequences:
-
-```bash
-ls Examples/TreeSeqs/*trees > temp_wd/tree_list1.txt
-```
-
-```bash
-python disperseNN.py \
-  --predict \
-  --load_weights Saved_models/out136_2400.12_model.hdf5 \
-  --training_params Saved_models/out136_2400.12_training_params.npy \
-  --tree_list temp_wd/tree_list1.txt \
-  --recapitate False \
-  --mutate True \
-  --min_n 90 \
-  --edge_width 3 \
-  --sampling_width 1  \
-  --batch_size 1 \
-  --num_pred 3 \
-  --out temp_wd/out_treeseq \
-  --seed 12345 \
-```
-
-In addition to the flags already introduced in the VCF example, the additional flags for this command are:
-- `tree_list`: list of paths to the analyzed tree sequences. &#963; values and map widths are extracted directly from the tree sequence.
-- `recapitate`: recapitate the tree sequence. Here, we have specified 'False' because the provided tree sequences are already recapitated.
-- `mutate`: add mutations to the tree sequence until the specified number of SNPs are obtained (5,000 in this case).
-- `min_n`: specifies the minimum sample size. Recall that `out136_2400.12_training_params.npy` specifies a maximum sample size of 100, thus a random sample size between 90 and 100 will be drawn in this case. The model `out136_2400.12_model.hdf5` requires sample size between 10 and 100.
-- `edge_width`: this is the width of edge to 'crop' from the sides of the map. In other words, individuals are sampled edge_width distance from the sides of the map.
-- `sampling_width`: value in range (0,1), in proportion to the map width.
-- `batch_size`: for the data generator.
-- `num_pred`: this flag specifies how many simulations from the `tree_list` to predict with. 
-
-
-Similar to the previous example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
-
-```bash
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 16.4714975747
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98217910_Ne11232_recap.trees 1.8739656258 3.51678821
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99284440_Ne11375_recap.trees 2.0513000433 3.6275611008
-```
-
-Where the second and third columns contain the true and predicted &#963; for each simulation.
-
-### Training: tree sequences as input
-
-Below is an example command for the training step.
-This example uses tree sequences as input (runs for minutes to hours, depending on threads).
-
-```bash
-python disperseNN.py \
-  --train \
-  --tree_list temp_wd/tree_list1.txt \
-  --recapitate False \
-  --mutate True \
-  --min_n 10 \
-  --max_n 10 \
-  --num_snps 1000 \
-  --edge_width 3 \
-  --sampling_width 1 \
-  --num_samples 100 \
-  --batch_size 10 \
-  --max_epochs 10 \
-  --out temp_wd/out1 \
-  --seed 12345 \
-  --threads 1 \
-```
-
-- `max_n`: paired with `min_n` to describe the range of sample sizes to drawn from. Set `min_n` equal to `max_n` to use a fixed sample size.
-- `num_snps`: the number of SNPs to use as input for the CNN.
-- `max_epochs`: for training
-- `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. 
-- `threads`: number of threads to use for multiprocessing.
 
 
 
 
+## Instructions with example commands
 
 
 ### Simulation
 
-In some cases, the pre-trained model provided may not be appropriate for your data.
-In this case, it is possible to train new model from scratch from new a simulated training set.
+The pre-trained model provided may not be appropriate for your data.
+In this case, it is possible to train a new model from scratch from a simulated training set.
 We use the SLiM recipe `SLiM_recipes/bat20.slim` to generate training data (tree sequences).
 The model is adapted from [Battey et al. (2020)](https://doi.org/10.1534/genetics.120.303143),
 but certain model parameters are specified on the command line.
@@ -233,7 +166,7 @@ slim -d SEED=12345 \
        # Note the two sets of quotes around the output name
 ```
 
-Command line arguments are passed to SLiM using the `-d` flag followed the the variable name as it appears in the recipe file.
+Command line arguments are passed to SLiM using the `-d` flag followed by the variable name as it appears in the recipe file.
 
 - `SEED` - a random seed to reproduce the simulation results.
 - `sigma` - the dispersal parameter.
@@ -243,11 +176,83 @@ Command line arguments are passed to SLiM using the `-d` flag followed the the v
 - `W` - the height and width of the geographic spatial boundaries.
 - `G` - total size of the simulated genome.
 - `maxgens` - number of generations to run simulation.
-- `OUTNAME` - prefix to name out files.
+- `OUTNAME` - prefix to name output files.
 
-Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape.
-Given the strict format of the input files, we do not recommend users attempt to generate their own training data from sources other than SLiM.
+Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
+Given the strict format of the input files, we do not recommend users attempt to generate training data from sources other than SLiM.
 
+
+### Training
+
+Below is an example command for the training step.
+This example uses tree sequences as input (runs for minutes to hours, depending on threads).
+
+```bash
+python disperseNN.py \
+  --train \
+  --tree_list temp_wd/tree_list1.txt \
+  --recapitate False \
+  --mutate True \
+  --min_n 10 \
+  --max_n 10 \
+  --edge_width 3 \
+  --sampling_width 1 \
+  --num_snps 1000 \
+  --num_samples 100 \
+  --batch_size 10 \
+  --threads 1 \
+  --max_epochs 10 \
+  --seed 12345 \
+  --out temp_wd/out1
+```
+
+- `tree_list`: list of paths to the tree sequences. &#963; values and habitat widths are extracted directly from the tree sequence.
+- `recapitate`: recapitate the tree sequence. Here, we have specified 'False' because the provided tree sequences are already recapitated, and it it's quite slow (although possible) to recapitate during training.
+- `mutate`: add mutations to the tree sequence until the specified number of SNPs are obtained (5,000 in this case, specified inside the training params file).
+- `min_n`: specifies the minimum sample size. 
+- `max_n`: paired with `min_n` to describe the range of sample sizes to drawn from. Set `min_n` equal to `max_n` to use a fixed sample size.
+- `edge_width`: this is the width of edge to 'crop' from the sides of the habitat. In other words, individuals are sampled `edge_width` distance from the sides of the habitat.
+- `sampling_width`: samples individuals from a restricted sampling window with width between 0 and 1, in proportion to the habitat width, after excluding edges.
+- `num_snps`: the number of SNPs to use as input for the CNN.
+- `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. This let's us get away with fewer simulations.
+- `batch_size`: for the data generator. We find that batch_size=40 works well if the training set is larger.
+- `threads`: number of threads to use for multiprocessing during the data generation step.
+- `max_epochs`: maximum number of epochs to train for.
+- `seed`: random number seed.
+- `out`: output prefix.
+
+This command will print the training progress to stdout, while the model weights are saved to `temp_wd/out1_model.hdf5`.
+
+
+### Prediction: tree sequences as input
+
+If you want to predict &#963; in simulated tree sequences, such as those generated by `msprime` and `SLiM`, the predict command will look a bit different than predicting with a VCF as input. Below is an example command (should take <30s to run). Each command line flag is described in the preceding examples.
+
+
+```bash
+python disperseNN.py \
+  --predict \
+  --load_weights Saved_models/out136_2400.12_model.hdf5 \
+  --training_params Saved_models/out136_2400.12_training_params.npy \
+  --tree_list temp_wd/tree_list1.txt \
+  --recapitate False \
+  --mutate True \
+  --min_n 10 \
+  --edge_width 3 \
+  --sampling_width 1  \
+  --seed 12345 \
+  --out temp_wd/out_treeseq \
+```
+
+Similar to the earlier prediction example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
+
+```bash
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 16.4714975747
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98217910_Ne11232_recap.trees 1.8739656258 3.51678821
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99284440_Ne11375_recap.trees 2.0513000433 3.6275611008
+```
+
+Here, the second and third columns contain the true and predicted &#963; for each simulation.
 
 
 
@@ -255,16 +260,18 @@ Given the strict format of the input files, we do not recommend users attempt to
 
 ## Vignette: example workflow
 
+This vignette will walk through an example workflow with more verbose instructions, particularly for the intermediate data-organizing steps.
+
 ### Custom simulations
 
-Next, we will analyze a theoretical population of *Internecivus raptus* 😱.
+We will analyze a theoretical population of *Internecivus raptus* 😱.
 Let's assume we have independent estimates from previous studies for the size 
 of the species range and the population density: these values are 50x50 km^2, and 6 individuals per square km, respectively.
 With values for these nuisance parameters in hand we can design custom training simulations for inferring &#963;.
 Lets assume our *a priori* expectation for the dispersal rate in this species is somewhere between 0.2 and 1.5 km/generation;
 we want to explore potential dispersal rates in this range.
 
-Below is some bash code to run the simulations (runs for a few minutes, to an hour, depending on threads):
+Below is some bash code to run the simulations. Threads can be adjusted via the `-j` flag to `parallel` (runs for a few minutes, to an hour, depending on threads):
 
 ```bash
 mkdir temp_wd/TreeSeqs
@@ -272,12 +279,25 @@ for i in {1..100}
 do
     sigma=$(python -c 'from scipy.stats import loguniform; print(loguniform.rvs(0.2,1.5))')
     echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> temp_wd/sim_commands.txt
-    echo temp_wd/TreeSeqs/output_$i.trees >> temp_wd/tree_list.txt
 done
-parallel -j 20 < temp_wd/sim_commands.txt
+parallel -j 2 < temp_wd/sim_commands.txt
 ```
 
 Note: the carrying capacity in this model, `K`, corresponds roughly to density, but the actual density will fluctuate a bit.
+
+Next we will recapitate the tree sequences. We choose to do this step up front, as it makes the training step substantially faster. However in practice you may choose to skip this preliminary step, and instead recapitate on-the-fly during training with the `recapitate` flag. 
+
+This code block recapitates (runs for a few minutes, to an hour, depending on threads):
+
+```bash
+for i in {1..100};
+do
+    echo "python -c 'import pyslim; ts=pyslim.load(\"temp_wd/TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne,random_seed=$i); ts.dump(\"temp_wd/TreeSeqs/output_$i"_"recap.trees\")'" >> temp_wd/recap_commands.txt
+    echo temp_wd/TreeSeqs/output_$i"_"recap.trees >> temp_wd/tree_list.txt
+done   
+parallel -j 2 < temp_wd/recap_commands.txt
+```
+
 
 
 
@@ -297,7 +317,9 @@ Using 20 dedicated threads (and batch size=20), this step should take several ho
 
 Our training command will use a similar settings to the above example "Training: tree sequences as input".
 Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below).
-We will sample 100 partially overlapping samples of n=14 from each tree sequence for a total training set of size 5000- this is specified via the `num_samples` flag.
+We will sample 100 partially overlapping samples of n=14. 
+This is specified via the `num_samples` flag, 
+and will result in a total training set of size 5,000.
 
 ```bash
 python disperseNN.py \
@@ -315,13 +337,11 @@ python disperseNN.py \
   --threads 1 \
   --max_epochs 1 \
   --out temp_wd/out2 \
-  --seed 12345 \
+  --seed 12345
 ```
 
 Note: here we chose to sample away from the habitat edges by 1.5km.
 This is because in the simulation model we artifically reduces survival probability near the edges.
-
-
 
 
 ### Testing
@@ -340,7 +360,6 @@ python disperseNN.py \
   --min_n 14 \
   --edge_width 1.5 \
   --sampling_width 1 \
-  --num_pred 10 \
   --batch_size 10 \
   --threads 1 \
   --out temp_wd/out2 \
@@ -361,9 +380,6 @@ temp_wd/TreeSeqs/output_58.trees 1.1115748604 0.5073908072
 temp_wd/TreeSeqs/output_59.trees 0.5463572066 0.5131512291
 temp_wd/TreeSeqs/output_60.trees 1.2719527705 0.5090078776
 ```
-
-
-
 
 
 ### VCF prep

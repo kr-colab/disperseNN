@@ -491,10 +491,13 @@ def prep_preprocessed_and_pred():
     sample_widths = load_single_value_dict(args.samplewidth_list)
     # storing just the names, for output.
     file_names = read_dict(args.geno_list)
+    total_sims = len(file_names)
 
     # organize "partition" to hand to data generator
     partition = {}
-    simids = np.random.choice(np.arange(0, len(genos)),
+    if args.num_pred == None:
+        args.num_pred = int(total_sims)
+    simids = np.random.choice(np.arange(total_sims),
                               args.num_pred, replace=False)
     partition["prediction"] = simids
 
@@ -541,7 +544,10 @@ def prep_trees_and_pred():
 
     # organize "partition" to hand to data generator
     partition = {}
-    simids = np.random.choice(np.arange(0, total_sims),
+    if args.num_pred == None:
+        args.num_pred = int(total_sims)
+
+    simids = np.random.choice(np.arange(total_sims),
                               args.num_pred, replace=False)
     partition["prediction"] = simids
 

@@ -52,9 +52,6 @@ def check_params(args):
             print("sampling width as proportion, (0,1)")
             exit()
     if args.predict == True and args.empirical == None:
-        if args.num_pred == None:
-            print("how many pred sets? (via --num_pred)")
-            exit()
         if args.num_pred % args.batch_size != 0:
             print(
                 "\n\npred sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"

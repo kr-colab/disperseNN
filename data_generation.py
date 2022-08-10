@@ -119,7 +119,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         "The meat: load in and fully process a tree sequence"
         
         # read input                        
-        sys.stdout.flush()
+        print(filepath, seed, flush=True)
         ts = tskit.load(filepath)
         np.random.seed(seed)
 
