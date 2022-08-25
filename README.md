@@ -100,8 +100,8 @@ Below is an example command for estimating &#963; from a VCF file using a pre-tr
 ```bash
 python disperseNN.py \
   --predict \
-  --load_weights Saved_models/out136_2400.12_model.hdf5 \
-  --training_params Saved_models/out136_2400.12_training_params.npy \
+  --load_weights Saved_models/pretrained082522_model.hdf5 \
+  --training_params Saved_models/pretrained082522_training_params.npy \
   --empirical Examples/VCFs/halibut \
   --num_reps 10 \
   --out temp_wd/out_vcf \
@@ -110,7 +110,7 @@ python disperseNN.py \
 
 Explanation of command line values:
 - `load_weights`: this specifies the path to the saved model.
-The above command points to a particular pre-trained model, `out136_2400.12_model.hdf5`,
+The above command points to a particular pre-trained model, `pretrained082522_model.hdf5`,
 but instructions for how to train a new model from scratch are described below.
 - `training_params`: a single file with several parameters used to train the above model. Included are: the mean and standard deviation used to normalize the training targets, and the number of SNPs and maximum sample size used to train the above model. In this case, the number of SNPs is 5,000 and the max sample size is 100.
 - `empirical`: this flag is specific to analyzing empirical VCFs. Give it the shared prefix for the .vcf and .locs files (i.e. without '.vcf' or '.locs')
@@ -232,8 +232,8 @@ If you want to predict &#963; in simulated tree sequences, such as those generat
 ```bash
 python disperseNN.py \
   --predict \
-  --load_weights Saved_models/out136_2400.12_model.hdf5 \
-  --training_params Saved_models/out136_2400.12_training_params.npy \
+  --load_weights Saved_models/pretrained082522_model.hdf5 \
+  --training_params Saved_models/pretrained082522_training_params.npy \
   --tree_list Examples/tree_list1.txt \
   --recapitate False \
   --mutate True \
