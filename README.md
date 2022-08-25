@@ -121,16 +121,16 @@ but instructions for how to train a new model from scratch are described below.
 In addition to printing information about the model architecture to standard output, this command will also create a new file, `temp_wd/out_vcf_predictions.txt`, containing:
 
 ```bash
-Examples/VCFs/halibut_0 5.6412617497
-Examples/VCFs/halibut_1 6.037629072
-Examples/VCFs/halibut_2 11.5903892079
-Examples/VCFs/halibut_3 6.7408159579
-Examples/VCFs/halibut_4 5.9518683625
-Examples/VCFs/halibut_5 7.9183494346
-Examples/VCFs/halibut_6 5.3469995841
-Examples/VCFs/halibut_7 6.2734158333
-Examples/VCFs/halibut_8 8.9114959234
-Examples/VCFs/halibut_9 6.2295782895
+Examples/VCFs/halibut_0 4.008712555
+Examples/VCFs/halibut_1 2.7873949732
+Examples/VCFs/halibut_2 3.7759448146
+Examples/VCFs/halibut_3 3.2785118587
+Examples/VCFs/halibut_4 2.6940501913
+Examples/VCFs/halibut_5 2.8515263298
+Examples/VCFs/halibut_6 3.1886536211
+Examples/VCFs/halibut_7 2.5544670147
+Examples/VCFs/halibut_8 2.7795463315
+Examples/VCFs/halibut_9 3.9511181921
 ```
 
 Where each line is one of the 10 predictions of &#963; using a random subset of 5K SNPs.
@@ -150,7 +150,7 @@ We use the SLiM recipe `SLiM_recipes/bat20.slim` to generate training data (tree
 The model is adapted from [Battey et al. (2020)](https://doi.org/10.1534/genetics.120.303143),
 but certain model parameters are specified on the command line.
 
-As a demonstration, see the below example command (this simulation may run for half an hour, but feel free to kill it with ctrl-C):
+As a demonstration, see the below example command (this simulation may run for several minutes, but feel free to kill it with ctrl-C; we don't need this output for any downstream steps):
 
 ```bash
 slim -d SEED=12345 \
@@ -181,11 +181,12 @@ Command line arguments are passed to SLiM using the `-d` flag followed by the va
 Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
 Given the strict format of the input files, we do not recommend users attempt to generate training data from sources other than SLiM.
 
+In practice, we use 1000 or more simulations like the above one for a given training run (and then subsample from each simulation to achieve a training set of 50,000). Ideally simulations should be run on a high performance computing cluster.
 
 ### Training
 
 Below is an example command for the training step.
-This example uses tree sequences as input (again, feel free to kill this command. We don't need the output for any downstream commands).
+This example uses tree sequences as input (again, feel free to kill this command).
 
 ```bash
 python disperseNN.py \
@@ -223,6 +224,7 @@ python disperseNN.py \
 
 This command will print the training progress to stdout, while the model weights are saved to `temp_wd/out1_model.hdf5`.
 
+This example command is small-scale; in practice, you will need a training set of maybe 50,000, and you will want to train for longer than 10 epochs. 
 
 ### Prediction: tree sequences as input
 
@@ -247,9 +249,11 @@ python disperseNN.py \
 Similar to the earlier prediction example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
 
 ```bash
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 16.4714975747
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98217910_Ne11232_recap.trees 1.8739656258 3.51678821
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99284440_Ne11375_recap.trees 2.0513000433 3.6275611008
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 15.3199147604
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99290585_Ne11795_recap.trees 1.1841308256 7.5874201948
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99739498_Ne12157_recap.trees 0.7618345451 4.2459463213
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99284440_Ne11375_recap.trees 1.8739656258 6.7907182188
+Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98217910_Ne11232_recap.trees 2.0513000433 7.3733756923
 ```
 
 Here, the second and third columns contain the true and predicted &#963; for each simulation.

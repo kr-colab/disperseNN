@@ -37,13 +37,6 @@ def check_params(args):
         if args.num_reps > 1:
             print("can't bootstrap on preprocessed data, only tree sequences or VCF")
             exit()
-    else:
-        if args.mutate == None:
-            print("specify whether or not to mutate the tree sequences")
-            exit()
-        elif args.recapitate == None:
-            print("specify whether or not to recapitate the tree sequences")
-            exit()
 
     # check some other param combinations
     if args.train == False and args.predict == False:
@@ -76,6 +69,13 @@ def check_params(args):
     if args.predict == True and args.preprocessed == False  and args.empirical == None:
         if args.min_n == None:
             print("missing min n, via --min_n")
+            exit()
+    if args.preprocessed == False and args.empirical == False:
+        if args.mutate == None:
+            print("specify whether or not to mutate the tree sequences")
+            exit()
+        elif args.recapitate == None:
+            print("specify whether or not to recapitate the tree sequences")
             exit()
 
 
