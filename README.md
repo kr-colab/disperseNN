@@ -18,7 +18,7 @@
 
 `disperseNN` is a machine learning framework for predicting &#963;, the expected per generation displacement distance between offspring and their parent(s), from genetic variation data.
 `disperseNN` uses training data generated from simulations.
-See [Smith et al.](https://kr-colab.github.io/) for a comprehensive description of the method.
+See [Smith et al.](https://www.biorxiv.org/content/10.1101/2022.08.25.505329v1) for a comprehensive description of the method.
 
 
 
