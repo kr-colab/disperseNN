@@ -78,10 +78,10 @@ parser.add_argument(
 parser.add_argument("--rho", help="recombination rate",
                     default=1e-8, type=float)
 parser.add_argument(
-    "--num_samples",
+    "--repeated_samples",
     default=1,
     type=int,
-    help="number of organismal-samples (each of size n) from each tree sequence",
+    help="number of samples (each of size n) to take from each tree sequence",
 )
 parser.add_argument(
     "--num_reps",
@@ -308,15 +308,18 @@ def prep_trees_and_train():
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
 
-    # read targets
-    print("reading targets from tree sequences: this should take several minutes")
-    targets = []
-    for i in range(total_sims):
-        # *** can we access provenance without loading the whole tree sequence?
-        ts = tskit.load(trees[i])
-        target = parse_provenance(ts, 'sigma')
-        target = np.log(target)
-        targets.append(target)
+    # read targets                                                                        
+    if args.target_list != None:
+        targets = read_single_value(args.target_list)
+        targets = np.log(targets)
+    else:
+        print("reading true values from tree sequences: this should take several minutes")
+        targets = []
+        for i in range(total_sims):
+            ts = tskit.load(trees[i])
+            target = parse_provenance(ts, 'sigma')
+            target = np.log(target)
+            targets.append(target)
 
     # normalize targets
     meanSig = np.mean(targets)
@@ -329,7 +332,7 @@ def prep_trees_and_train():
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
     train, val = train_test_split(sim_ids, test_size=args.validation_split)
-    if len(val)*args.num_samples % args.batch_size != 0 or len(train)*args.num_samples % args.batch_size != 0:
+    if len(val)*args.repeated_samples % args.batch_size != 0 or len(train)*args.repeated_samples % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
@@ -340,10 +343,10 @@ def prep_trees_and_train():
     partition["train"] = []
     partition["validation"] = []
     for i in train:
-        for j in range(args.num_samples):
+        for j in range(args.repeated_samples):
             partition["train"].append(i)
     for i in val:
-        for j in range(args.num_samples):
+        for j in range(args.repeated_samples):
             partition["validation"].append(i)
 
     # initialize generators
@@ -403,7 +406,7 @@ def prep_preprocessed_and_train():
     # split into val,train sets
     sim_ids = np.arange(0, total_sims)
     train, val = train_test_split(sim_ids, test_size=args.validation_split)
-    if len(val)*args.num_samples % args.batch_size != 0 or len(train)*args.num_samples % args.batch_size != 0:
+    if len(val)*args.repeated_samples % args.batch_size != 0 or len(train)*args.repeated_samples % args.batch_size != 0:
         print(
             "\n\ntrain and val sets each need to be divisible by batch_size; otherwise some batches will have missing data\n\n"
         )
@@ -534,14 +537,20 @@ def prep_trees_and_pred():
     total_sims = len(trees)
 
     # read targets
-    print("reading true values from tree sequences: this should take several minutes")
-    targets = []
-    for i in range(total_sims):
-        ts = tskit.load(trees[i])
-        target = parse_provenance(ts, 'sigma')
-        target = np.log(target)
-        targets.append(target)
-
+    if args.target_list == True:
+        targets = read_single_value(args.target_list)
+        targets = np.log(targets)
+        print(targets)
+        exit()
+    else:
+        print("reading true values from tree sequences: this should take several minutes")
+        targets = []
+        for i in range(total_sims):
+            ts = tskit.load(trees[i])
+            target = parse_provenance(ts, 'sigma')
+            target = np.log(target)
+            targets.append(target)
+            
     # organize "partition" to hand to data generator
     partition = {}
     if args.num_pred == None:

@@ -1,4 +1,4 @@
- disperseNN
+# disperseNN
 
 - [disperseNN](#dispersenn)
   - [Install requirements](#install-requirements)
@@ -35,10 +35,10 @@ cd disperseNN/
 
 Next create a `conda` environment using our provided `yaml` file. 
 This will create a virtual environment, and then install all the
-dependencies. Should work with `mamba` too!
+dependencies. 
 
 ```bash
-conda env create -f conda_env.yml
+mamba env create -f conda_env.yml
 ```
 
 After `conda` has done its thing, activate the new environment
@@ -199,7 +199,7 @@ python disperseNN.py \
   --edge_width 3 \
   --sampling_width 1 \
   --num_snps 1000 \
-  --num_samples 100 \
+  --repeated_samples 100 \
   --batch_size 10 \
   --threads 1 \
   --max_epochs 10 \
@@ -215,7 +215,7 @@ python disperseNN.py \
 - `edge_width`: this is the width of edge to 'crop' from the sides of the habitat. In other words, individuals are sampled `edge_width` distance from the sides of the habitat.
 - `sampling_width`: samples individuals from a restricted sampling window with width between 0 and 1, in proportion to the habitat width, after excluding edges.
 - `num_snps`: the number of SNPs to use as input for the CNN.
-- `num_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. This let's us get away with fewer simulations.
+- `repeated_samples`: this is the number of repeated draws of `n` individuals to take from each tree sequence. This let's us get away with fewer simulations.
 - `batch_size`: for the data generator. We find that batch_size=40 works well if the training set is larger.
 - `threads`: number of threads to use for multiprocessing during the data generation step.
 - `max_epochs`: maximum number of epochs to train for.
@@ -322,7 +322,7 @@ Using 20 dedicated threads (and batch size=20), this step should take several ho
 Our training command will use a similar settings to the above example "Training: tree sequences as input".
 Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below).
 We will sample 100 partially overlapping samples of n=14. 
-This is specified via the `num_samples` flag, 
+This is specified via the `repeated_samples` flag, 
 and will result in a total training set of size 5,000.
 
 ```bash
@@ -336,7 +336,7 @@ python disperseNN.py \
   --tree_list temp_wd/training_trees.txt \
   --edge_width 1.5 \
   --sampling_width 1 \
-  --num_samples 10 \
+  --repeated_samples 10 \
   --batch_size 20 \
   --threads 1 \
   --max_epochs 1 \
