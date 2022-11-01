@@ -9,6 +9,7 @@ import multiprocessing
 import warnings
 from attrs import define,field
 from read_input import *
+from process_input import *
 
 @define
 class DataGenerator(tf.keras.utils.Sequence):
@@ -130,22 +131,8 @@ class DataGenerator(tf.keras.utils.Sequence):
             edge_width = float(self.edge_width)
 
         # recapitate
-        alive_inds = []
-        for i in ts.individuals():
-            alive_inds.append(i.id)
         if self.recapitate == "True":
-            Ne = len(alive_inds)
-            if ts.num_populations > 1:
-                ts = ts.simplify() # gets rid of weird, extraneous populations
-            demography = msprime.Demography.from_tree_sequence(ts)      
-            demography[0].initial_size = Ne 
-            ts = msprime.sim_ancestry(                           
-                    initial_state=ts,                            
-                    recombination_rate=self.rho,                   
-                    demography=demography,
-                    start_time=ts.metadata["SLiM"]["generation"],
-                    random_seed=seed,                       
-            )                                                    
+            ts = recapitate(ts, self.rho, seed)
         
         # crop map
         if self.sampling_width != None:
@@ -161,6 +148,9 @@ class DataGenerator(tf.keras.utils.Sequence):
         n = np.random.randint(
             self.min_n, self.max_n + 1
         )  # (excludes the max of the range)
+        alive_inds = []
+        for i in ts.individuals():
+            alive_inds.append(i.id)
         sampled_inds = self.cropper(ts, W, sample_width, edge_width, alive_inds)
         failsafe = 0
         while (
@@ -299,7 +289,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             geno_mat2[:, 0 : n * self.phase] = geno_mat1
             geno_mat_all.append(geno_mat2)
             sample_width_all.append(sampling_width)
-
+        
         return geno_mat_all, sample_width_all
 
 
@@ -346,6 +336,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 y[i] = self.targets[ID]
                 X2[i] = self.sample_widths[ID]
                 X1[i,:] = self.preprocess_sample_ts(self.genos[ID])
-            X = [X1, X2]
+
+        X = [X1, X2]
 
         return (X, y)

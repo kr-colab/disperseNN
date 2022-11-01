@@ -39,7 +39,7 @@ reproduction() {
         nOff = rpois(1, FECUN);
         for (i in seqLen(nOff)) {
             pos = individual.spatialPosition + rnorm(2, 0, SD);
-            if (p1.pointInBounds(pos)) {
+            if (p0.pointInBounds(pos)) {
                offspring = subpop.addCrossed(individual, mate);
                offspring.setSpatialPosition(pos);
             }
@@ -49,17 +49,17 @@ reproduction() {
 }
 
 1 early() {
-    sim.addSubpop("p1", asInteger(K * W * W));
-    p1.setSpatialBounds(c(0, 0, W, W));
-    for (ind in p1.individuals) {
-        ind.setSpatialPosition(p1.pointUniform());
+    sim.addSubpop("p0", asInteger(K * W * W));
+    p0.setSpatialBounds(c(0, 0, W, W));
+    for (ind in p0.individuals) {
+        ind.setSpatialPosition(p0.pointUniform());
     }
-    i1.evaluate();
+    i1.evaluate(p0);
 }
 
 early() {
-    i1.evaluate(p1);
-    inds = p1.individuals;
+    i1.evaluate(p0);
+    inds = p0.individuals;
     competition = i1.totalOfNeighborStrengths(inds);
     inds.fitnessScaling = pmin(0.95, 1/(1 + RHO * competition));    
     // scale fitness at edges
@@ -68,34 +68,18 @@ early() {
 
 1: late() {
    // to be ready for mate choice
-   i2.evaluate(p1);
+   i2.evaluate(p0);
 }
 
 1: late() {
-        print(c("Finished generation", sim.generation, "; N=", p1.individualCount));
-        if (p1.individualCount < (0.75*K*W*W)){
+        print(c("Finished generation", sim.cycle, "; N=", p0.individualCount));
+        if (p0.individualCount < (0.75*K*W*W)){
            catn("Population declined more than 25% in first 100 gens.");
            sim.simulationFinished();
         }
         else{
-		// // output intermittent tree sequences
-		// if (sim.generation == 100){
-		//     sim.treeSeqOutput(paste(c(OUTNAME,"_100gens_",SEED,".trees"), sep=""));
-		//     }
-		// else if (sim.generation == 1000){
-		//     sim.treeSeqOutput(paste(c(OUTNAME,"_1000gens_",SEED,".trees"), sep=""));
-		//     }
-                // else if (sim.generation == 10000){
-		//     sim.treeSeqOutput(paste(c(OUTNAME,"_10000gens_",SEED,".trees"), sep=""));
-		//     }
-		// else if (sim.generation == 100000){
-		//     sim.treeSeqOutput(paste(c(OUTNAME,"_100000gens_",SEED,".trees"), sep=""));
-		//     catn("Done.");	    
-		//     sim.simulationFinished();
-		//     }
-		
 		// end after maxgens
-		if (sim.generation == maxgens){
+		if (sim.cycle == maxgens){
                    sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
                    catn("Done.");
                    sim.simulationFinished();

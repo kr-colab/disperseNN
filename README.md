@@ -178,6 +178,8 @@ Command line arguments are passed to SLiM using the `-d` flag followed by the va
 - `maxgens` - number of generations to run simulation.
 - `OUTNAME` - prefix to name output files.
 
+Note: after running SLiM for a fixed number of generations, the simulation is still not complete, as many trees will likely not have coalesced still. We usually finish the simulation backwards in time using mspime, e.g., "recapitation". This can either be done before training (recommended; see example below) or during training using the `recapitate` flag. 
+
 Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
 Given the strict format of the input files, we do not recommend users attempt to generate training data from sources other than SLiM.
 
@@ -192,7 +194,6 @@ This example uses tree sequences as input (again, feel free to kill this command
 python disperseNN.py \
   --train \
   --tree_list Examples/tree_list1.txt \
-  --recapitate False \
   --mutate True \
   --min_n 10 \
   --max_n 10 \
@@ -208,7 +209,6 @@ python disperseNN.py \
 ```
 
 - `tree_list`: list of paths to the tree sequences. &#963; values and habitat widths are extracted directly from the tree sequence.
-- `recapitate`: recapitate the tree sequence. Here, we have specified 'False' because the provided tree sequences are already recapitated, and it it's quite slow (although possible) to recapitate during training.
 - `mutate`: add mutations to the tree sequence until the specified number of SNPs are obtained (5,000 in this case, specified inside the training params file).
 - `min_n`: specifies the minimum sample size. 
 - `max_n`: paired with `min_n` to describe the range of sample sizes to drawn from. Set `min_n` equal to `max_n` to use a fixed sample size.
@@ -222,9 +222,9 @@ python disperseNN.py \
 - `seed`: random number seed.
 - `out`: output prefix.
 
-This command will print the training progress to stdout, while the model weights are saved to `temp_wd/out1_model.hdf5`.
+This run will eventually print the training progress to stdout, while the model weights are saved to `temp_wd/out1_model.hdf5`.
 
-This example command is small-scale; in practice, you will need a training set of maybe 50,000, and you will want to train for longer than 10 epochs. 
+Also, this example command is small-scale; in practice, you will need a training set of maybe 50,000, and you will want to train for longer than 10 epochs. 
 
 ### Prediction: tree sequences as input
 
@@ -237,7 +237,6 @@ python disperseNN.py \
   --load_weights Saved_models/pretrained082522_model.hdf5 \
   --training_params Saved_models/pretrained082522_training_params.npy \
   --tree_list Examples/tree_list1.txt \
-  --recapitate False \
   --mutate True \
   --min_n 10 \
   --edge_width 3 \
@@ -249,11 +248,11 @@ python disperseNN.py \
 Similar to the earlier prediction example, this will generate a file called `temp_wd/out_treeseq_predictions.txt` containing:
 
 ```bash
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98180132_Ne12336_recap.trees 0.4588403008 15.3199147604
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99290585_Ne11795_recap.trees 1.1841308256 7.5874201948
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99739498_Ne12157_recap.trees 0.7618345451 4.2459463213
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_99284440_Ne11375_recap.trees 1.8739656258 6.7907182188
-Examples/TreeSeqs/output_sigma0.2to3_K5_W50_100gens_98217910_Ne11232_recap.trees 2.0513000433 7.3733756923
+Examples/TreeSeqs/output_2_recap.trees 0.5914545564 0.6582331812
+Examples/TreeSeqs/output_3_recap.trees 0.3218814158 0.3755014635
+Examples/TreeSeqs/output_1_recap.trees 0.3374337601 0.4073884732
+Examples/TreeSeqs/output_5_recap.trees 0.2921853737 0.2047981935
+Examples/TreeSeqs/output_4_recap.trees 0.277020769 0.3208989912
 ```
 
 Here, the second and third columns contain the true and predicted &#963; for each simulation.
@@ -289,14 +288,14 @@ parallel -j 2 < temp_wd/sim_commands.txt
 
 Note: the carrying capacity in this model, `K`, corresponds roughly to density, but the actual density will fluctuate a bit.
 
-Next we will recapitate the tree sequences. We choose to do this step up front, as it makes the training step substantially faster. However in practice you may choose to skip this preliminary step, and instead recapitate on-the-fly during training with the `recapitate` flag. 
+Next we will recapitate the tree sequences. We choose to do this step up front, as it makes the training step much faster. However you may choose to skip this preliminary step, and instead recapitate on-the-fly during training using `--recapitate True`, which has the benefit of adding variation to the training set. 
 
 This code block recapitates (runs for a few minutes, to an hour, depending on threads):
 
 ```bash
 for i in {1..100};
 do
-    echo "python -c 'import pyslim; ts=pyslim.load(\"temp_wd/TreeSeqs/output_$i.trees\"); Ne=len(ts.individuals_alive_at(0)); ts=pyslim.recapitate(ts,recombination_rate=1e-8,ancestral_Ne=Ne,random_seed=$i); ts.dump(\"temp_wd/TreeSeqs/output_$i"_"recap.trees\")'" >> temp_wd/recap_commands.txt
+    echo "python -c 'import tskit; from process_input import *; ts=tskit.load(\"temp_wd/TreeSeqs/output_$i.trees\"); ts=recapitate(ts,1e-8,$i); ts.dump(\"temp_wd/TreeSeqs/output_$i"_"recap.trees\")'" >> temp_wd/recap_commands.txt
     echo temp_wd/TreeSeqs/output_$i"_"recap.trees >> temp_wd/tree_list.txt
 done   
 parallel -j 2 < temp_wd/recap_commands.txt
@@ -331,7 +330,6 @@ python disperseNN.py \
   --min_n 14 \
   --max_n 14 \
   --num_snps 1000 \
-  --recapitate True \
   --mutate True \
   --tree_list temp_wd/training_trees.txt \
   --edge_width 1.5 \
@@ -358,7 +356,6 @@ python disperseNN.py \
   --predict \
   --load_weights temp_wd/out2_model.hdf5 \
   --training_params temp_wd/out2_training_params.npy \
-  --recapitate True \
   --mutate True \
   --tree_list temp_wd/test_trees.txt \
   --min_n 14 \
@@ -370,19 +367,19 @@ python disperseNN.py \
   --seed 12345
 ```
 
-The output file `temp_wd/out2_sigma_predictions.txt` shows that our estimates are accurate***, therefore `disperseNN` was successful at learning to estimate &#963;.
+The output file `temp_wd/out2_predictions.txt` shows our estimates, which are not expected to be very good after such a small training run.
 
 ```bash
-temp_wd/TreeSeqs/output_51.trees 1.13122562 0.51208142
-temp_wd/TreeSeqs/output_52.trees 0.3823590837 0.4942408277
-temp_wd/TreeSeqs/output_53.trees 0.41219539 0.5039974494
-temp_wd/TreeSeqs/output_54.trees 0.4901229428 0.5056558093
-temp_wd/TreeSeqs/output_55.trees 0.2506551389 0.4867979277
-temp_wd/TreeSeqs/output_56.trees 0.2303818449 0.4834368114
-temp_wd/TreeSeqs/output_57.trees 1.0009738369 0.5087425838
-temp_wd/TreeSeqs/output_58.trees 1.1115748604 0.5073908072
-temp_wd/TreeSeqs/output_59.trees 0.5463572066 0.5131512291
-temp_wd/TreeSeqs/output_60.trees 1.2719527705 0.5090078776
+temp_wd/TreeSeqs/output_84_recap.trees 0.3967863343 0.4447612993
+temp_wd/TreeSeqs/output_98_recap.trees 0.4485952108 0.4456993015
+temp_wd/TreeSeqs/output_77_recap.trees 0.2158582993 0.4422532732
+temp_wd/TreeSeqs/output_68_recap.trees 0.3567543799 0.4427506462
+temp_wd/TreeSeqs/output_76_recap.trees 0.2504898583 0.4447698645
+temp_wd/TreeSeqs/output_59_recap.trees 1.2755786915 0.4527958429
+temp_wd/TreeSeqs/output_99_recap.trees 0.9861785139 0.4497781552
+temp_wd/TreeSeqs/output_69_recap.trees 1.0079008897 0.4538938886
+temp_wd/TreeSeqs/output_82_recap.trees 0.3062711445 0.4487468518
+temp_wd/TreeSeqs/output_80_recap.trees 0.7506339226 0.4483650639
 ```
 
 

@@ -55,7 +55,7 @@ parser.add_argument(
     help="maximum number of SNPs across all datasets (for pre-allocating memory)",
 )
 parser.add_argument(
-    "--num_pred", default=None, type=int, help="number of datasets to predict on"
+    "--num_pred", default=None, type=int, help="number of datasets to predict with"
 )
 parser.add_argument(
     "--min_n",
@@ -364,8 +364,8 @@ def prep_trees_and_train():
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("training!")
-    history = model.fit_generator(
-        generator=training_generator,
+    history = model.fit(
+        x=training_generator,
         use_multiprocessing=False,
         epochs=args.max_epochs,
         shuffle=False,  # (redundant with shuffling inside the generator)
@@ -432,8 +432,8 @@ def prep_preprocessed_and_train():
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("training!")
-    history = model.fit_generator(
-        generator=training_generator,
+    history = model.fit(
+        x=training_generator,
         use_multiprocessing=False,
         epochs=args.max_epochs,
         shuffle=False,
@@ -518,7 +518,7 @@ def prep_preprocessed_and_pred():
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
-    predictions = model.predict_generator(generator)
+    predictions = model.predict(x=generator)
     unpack_predictions(predictions, meanSig, sdSig,
                        targets, simids, file_names)
 
@@ -537,11 +537,9 @@ def prep_trees_and_pred():
     total_sims = len(trees)
 
     # read targets
-    if args.target_list == True:
+    if args.target_list != None:
         targets = read_single_value(args.target_list)
         targets = np.log(targets)
-        print(targets)
-        exit()
     else:
         print("reading true values from tree sequences: this should take several minutes")
         targets = []
@@ -574,7 +572,9 @@ def prep_trees_and_pred():
     load_dl_modules()
     model, checkpointer, earlystop, reducelr = load_network()
     print("predicting")
-    predictions = model.predict_generator(generator)
+    predictions = model.predict(
+        x=generator,
+    )
     unpack_predictions(predictions, meanSig, sdSig, targets, simids, trees)
 
     return
