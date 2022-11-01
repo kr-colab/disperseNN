@@ -4,6 +4,7 @@ import numpy as np
 import sys
 from geopy import distance
 import random
+import tskit, msprime
 
 # get sampling width
 
@@ -171,6 +172,37 @@ def ibd(genos, coords, phase, num_snps):
     r2 = r**2
     Nw = (1 / b)
     print("IBD r^2, slope, Nw:", r2, b, Nw)
+
+def recapitate(ts, r, rnseed):
+
+    ### inputs:
+    # ts: tree sequence, loaded via tskit.load()
+    # r: recombination rate
+    # rnseed: random number seed, e.g. the simulatoin id #                                                              
+
+    # count individuals
+    alive_inds = []
+    for i in ts.individuals():
+        alive_inds.append(i.id)
+    Ne = len(alive_inds)
+
+    # check for extra populations
+    if ts.num_populations != 1:
+        print("disperseNN sims older than the SLiM 4.0 update had extra populations.")
+        exit()
+
+    # recapitate
+    demography = msprime.Demography.from_tree_sequence(ts)
+    demography["p0"].initial_size = Ne
+    ts = msprime.sim_ancestry(
+            initial_state=ts,
+            demography=demography,
+            recombination_rate=r,
+            random_seed=rnseed,
+    )
+
+    return ts
+
 
 
 # main
