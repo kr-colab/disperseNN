@@ -273,7 +273,7 @@ def load_network():
 
 
 def make_generator_params_dict(
-    targets, trees, shuffle, genos, sample_widths
+    targets, trees, shuffle, genos, sample_widths, empirical_locs
 ):
     params = {
         "targets": targets,
@@ -298,6 +298,7 @@ def make_generator_params_dict(
         "genos": genos,
         "preprocessed": args.preprocessed,
         "num_reps": args.num_reps,
+        "empirical_locs": empirical_locs,
     }
     return params
 
@@ -307,6 +308,16 @@ def prep_trees_and_train():
     # tree sequences
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
+
+    # empirical locations
+    if args.empirical != None:
+        locs = read_locs(args.empirical + ".locs")
+        if len(locs) != args.max_n or len(locs) != args.min_n:
+            print("length of locs file doesn't match max_n")
+            exit()
+        locs = project_locs(locs, trees[0])
+    else:
+        locs = None
 
     # read targets                                                                        
     if args.target_list != None:
@@ -356,6 +367,7 @@ def prep_trees_and_train():
         shuffle=True,
         genos=None,
         sample_widths=None,
+        empirical_locs=locs,
     )
     training_generator = DataGenerator(partition["train"], **params)
     validation_generator = DataGenerator(partition["validation"], **params)
@@ -424,6 +436,7 @@ def prep_preprocessed_and_train():
         shuffle=True,
         genos=genos,
         sample_widths=sample_widths,
+        empirical_locs=[],
     )
     training_generator = DataGenerator(partition["train"], **params)
     validation_generator = DataGenerator(partition["validation"], **params)
@@ -455,7 +468,7 @@ def prep_empirical_and_pred():
     # project locs
     locs = read_locs(args.empirical + ".locs")
     locs = np.array(locs)
-    sampling_width = project_locs(locs)
+    sampling_width = calc_S(locs)
     print("sampling_width:", sampling_width)
     sampling_width = np.reshape(sampling_width, (1))
 
@@ -511,6 +524,7 @@ def prep_preprocessed_and_pred():
         shuffle=False,
         genos=genos,
         sample_widths=sample_widths,
+        empirical_locs=[],
     )
     generator = DataGenerator(partition["prediction"], **params)
 
@@ -535,6 +549,16 @@ def prep_trees_and_pred():
     # tree sequences
     trees = read_dict(args.tree_list)
     total_sims = len(trees)
+
+    # empirical locations                                     
+    if args.empirical != None:
+        locs = read_locs(args.empirical + ".locs")
+        if len(locs) != args.max_n or len(locs) != args.min_n:
+            print("length of locs file doesn't match max_n")
+            exit()
+        locs = project_locs(locs, trees[0])
+    else:
+        locs = None
 
     # read targets
     if args.target_list != None:
@@ -565,6 +589,7 @@ def prep_trees_and_pred():
         shuffle=False,
         genos=None,
         sample_widths=None,
+        empirical_locs=locs,
     )
     generator = DataGenerator(partition["prediction"], **params)
 
@@ -581,7 +606,7 @@ def prep_trees_and_pred():
 
 
 def unpack_predictions(predictions, meanSig, sdSig, targets, simids, file_names):
-    if args.empirical == None:
+    if args.tree_list != None or args.preprocessed == True:
         with open(f"{args.out}_predictions.txt", "w") as out_f:
             raes = []
             for i in range(args.num_pred):
@@ -622,14 +647,12 @@ if args.train == True:
 # predict
 if args.predict == True:
     print("starting prediction pipeline")
-    if args.empirical == None:
-        print("predicting on simulated data")
-        if args.preprocessed == True:
-            print("using pre-processed tensors")
-            prep_preprocessed_and_pred()
-        else:
-            print("using tree sequences")
-            prep_trees_and_pred()
+    if args.preprocessed == True:
+        print("using pre-processed tensors")
+        prep_preprocessed_and_pred()
+    elif args.tree_list != None:
+        print("using tree sequences")
+        prep_trees_and_pred()
     else:
         print("predicting on empirical data")
         prep_empirical_and_pred()

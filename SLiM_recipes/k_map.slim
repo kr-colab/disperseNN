@@ -1,0 +1,95 @@
+// missing constants-e.g. sigma, K, W, G- should be defined on command line
+
+initialize() {
+
+    setSeed(SEED);
+    print( c("new seed:",getSeed()) );
+    initializeSLiMModelType("nonWF");
+    initializeSLiMOptions(dimensionality="xy");
+    initializeTreeSeq(); 
+
+    print(sigma);
+
+    defineConstant("SD", sigma);  // sigma_D, the dispersal distance
+    defineConstant("SI", sigma);  // sigma_I, the spatial interaction distance
+    defineConstant("SM", SI);  // sigma_M, the mate choice distance
+    defineConstant("L", 4);    // mean lifetime at stationarity
+    defineConstant("FECUN", 1/L); // mean fecundity
+
+    initializeMutationType("m1", 0.5, "g", 0.0, 2);
+    initializeGenomicElementType("g1", m1, 1.0);
+    initializeGenomicElement(g1, 0, G-1);
+    initializeMutationRate(mu);
+    initializeRecombinationRate(r);  
+    
+    // spatial competition
+    initializeInteractionType(1, "xy", reciprocal=T, maxDistance=SI * 3);
+    i1.setInteractionFunction("n", 1.0/(2*PI*SI^2), SI);
+    
+    // mate choice
+    initializeInteractionType(2, "xy", reciprocal=T, maxDistance=SM * 3);
+    i2.setInteractionFunction("n", 1.0/(2*PI*SM^2), SM);
+
+}
+
+reproduction() {
+    mate = i2.drawByStrength(individual, 1);
+    if (mate.size()) {
+        nOff = rpois(1, FECUN);
+        for (i in seqLen(nOff)) {
+            pos = individual.spatialPosition + rnorm(2, 0, SD);
+            if (p0.pointInBounds(pos)) {
+               offspring = subpop.addCrossed(individual, mate);
+               offspring.setSpatialPosition(pos);
+            }
+        }
+    }
+    return;
+}
+
+1 early() {
+    dispersal_map = Image(DISPERSAL_MAP_FILE);
+    width = dispersal_map.width;
+    height = dispersal_map.height;
+    sim.addSubpop("p0", asInteger(K * width * height));
+    p0.setSpatialBounds(c(0, 0, width, height));
+    small_val = 0.001; // to avoid 0-fitness individuals
+    K_vals = dispersal_map.floatB * (K-small_val) + small_val;
+    p0.defineSpatialMap("K", "xy", K_vals, interpolate=T, valueRange=c(small_val,K), colors=c("#000000", "#0000FF"));
+    for (ind in p0.individuals) {
+        ind.setSpatialPosition(p0.pointUniform());
+    }
+    i1.evaluate(p0);
+}
+
+early() {
+    i1.evaluate(p0);
+    inds = p0.individuals;
+    competition = i1.totalOfNeighborStrengths(inds);
+    locations = inds.spatialPosition;
+    K_final = p0.spatialMapValue("K", locations);
+    RHO = FECUN/((1+FECUN) * K_final); // constant in spatial competition function
+    inds.fitnessScaling = pmin(0.95, 1/(1 + RHO * competition));    
+    // scale fitness at edges
+    inds.fitnessScaling = inds.fitnessScaling * pmin(sqrt(inds.x/SI), 1.0) * pmin(sqrt(inds.y/SI), 1.0) * pmin(sqrt((W - inds.x)/SI), 1.0) * pmin(sqrt((W - inds.y)/SI), 1.0);
+}
+
+1: late() {
+   // to be ready for mate choice
+   i2.evaluate(p0);
+}
+
+1: late() {
+   print(c("Finished generation", sim.cycle, "; N=", p0.individualCount));
+   if (sim.cycle == maxgens){
+      sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
+      catn("Done.");
+      sim.simulationFinished();
+   }
+}
+
+
+
+999999999 late() {} // jerry-rig. I haven't taken the time to figure out how to avoid this.
+
+

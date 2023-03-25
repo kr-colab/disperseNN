@@ -5,11 +5,43 @@ import sys
 from geopy import distance
 import random
 import tskit, msprime
+from read_input import *
+import utm
+from scipy import stats
+
+
+# project sample locations
+def project_locs(locs, fp):
+
+    # projection (plus some code for calculating error)
+    locs = np.array(locs) 
+    locs = np.array(utm.from_latlon(locs[:,0], locs[:,1])[0:2]) / 1000 
+    locs = locs.T
+    
+    # calculate extremes
+    min_lat = min(locs[:,0])
+    min_long = min(locs[:,1])
+    max_lat = max(locs[:,0])
+    max_long = max(locs[:,1])
+    lat_range = max_lat-min_lat
+    long_range = max_long-min_long
+    ts = tskit.load(fp)
+    W = parse_provenance(ts, 'W')
+    #W = max([lat_range, long_range])
+
+    # rescale                                                                          
+    locs[:,0] = (1-(locs[:,0]-min(locs[:,0])) / (max(locs[:,0])-min(locs[:,0]))) * lat_range # "1-" to orient north-south
+    locs[:,1] = (locs[:,1]-min(locs[:,1])) / (max(locs[:,1])-min(locs[:,1])) * long_range 
+
+    # move points to center of map
+    locs[:,0] += (W-lat_range)/2
+    locs[:,1] += (W-long_range)/2
+
+    return locs
+
 
 # get sampling width
-
-
-def project_locs(coords):
+def calc_S(coords):
     n = len(coords)
     sampling_width = 0
     for i in range(0, n-1):
@@ -164,7 +196,6 @@ def ibd(genos, coords, phase, num_snps):
             geodists.append(d)
 
     # regression
-    from scipy import stats
     geodists = np.array(geodists)
     gendists = np.array(gendists)
     b = stats.linregress(geodists, gendists)[0]

@@ -38,6 +38,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     genos: dict
     preprocessed: bool
     num_reps: int
+    empirical_locs: list
 
     def __attrs_post_init__(self):
         "Initialize a few things"
@@ -89,6 +90,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 and loc[1] < top_edge
             ):
                 cropped.append(i)
+
         return cropped
 
     def unpolarize(self, snp, n):
@@ -112,9 +114,31 @@ class DataGenerator(tf.keras.utils.Sequence):
                     new_genotype = 1                                                          
                 new_genotypes.append(new_genotype)
         else:
-            new_genotypes = False
-            
+            new_genotypes = False            
+
         return new_genotypes
+
+    def empirical_sample(self, ts, sampled_inds, n, N, W):
+        locs = np.array(self.empirical_locs)
+        np.random.shuffle(locs)
+        indiv_dict = {} # tracking which indivs have been picked up already  
+        for i in sampled_inds:
+            indiv_dict[i] = 0 
+        keep_indivs = []        
+        for pt in range(n): # for each sampling location
+            dists = {}
+            for i in indiv_dict:
+                ind = ts.individual(i)
+                loc = ind.location[0:2]
+                d = ( (loc[0]-locs[pt,0])**2 + (loc[1]-locs[pt,1])**2 )**(1/2)
+                dists[d] = i # see what I did there?
+            nearest = dists[min(dists)]
+            ind = ts.individual(nearest)
+            loc = ind.location[0:2]
+            keep_indivs.append(nearest)
+            del indiv_dict[nearest]
+
+        return keep_indivs
     
     def sample_ts(self, filepath, seed):
         "The meat: load in and fully process a tree sequence"
@@ -174,8 +198,11 @@ class DataGenerator(tf.keras.utils.Sequence):
                 exit()
             sampled_inds = self.cropper(ts, W, sample_width, edge_width, alive_inds)
 
-        # sample individuals
-        keep_indivs = np.random.choice(sampled_inds, n, replace=False)
+        # sampling
+        if self.empirical_locs == []:
+            keep_indivs = np.random.choice(sampled_inds, n, replace=False)
+        else:
+            keep_indivs = self.empirical_sample(ts, sampled_inds, n, len(sampled_inds), W)
         keep_nodes = []
         for i in keep_indivs:
             ind = ts.individual(i)
