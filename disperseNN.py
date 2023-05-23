@@ -317,7 +317,7 @@ def prep_trees_and_train():
             exit()
         locs = project_locs(locs, trees[0])
     else:
-        locs = None
+        locs = []
 
     # read targets                                                                        
     if args.target_list != None:
@@ -558,7 +558,7 @@ def prep_trees_and_pred():
             exit()
         locs = project_locs(locs, trees[0])
     else:
-        locs = None
+        locs = []
 
     # read targets
     if args.target_list != None:
