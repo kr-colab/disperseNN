@@ -356,14 +356,12 @@ class DataGenerator(tf.keras.utils.Sequence):
                     est_index = r + (k*self.num_reps)
                     X1[est_index, :] = batch[k][0][r]
                     X2[est_index] = batch[k][1][r]
-            X = [X1, X2]
 
         else:
             for i, ID in enumerate(list_IDs_temp):
                 y[i] = self.targets[ID]
                 X2[i] = self.sample_widths[ID]
                 X1[i,:] = self.preprocess_sample_ts(self.genos[ID])
-
+                
         X = [X1, X2]
-
         return (X, y)
