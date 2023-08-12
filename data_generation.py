@@ -130,7 +130,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             for i in indiv_dict:
                 ind = ts.individual(i)
                 loc = ind.location[0:2]
-                d = ( (loc[0]-locs[pt,0])**2 + (loc[1]-locs[pt,1])**2 )**(1/2)
+                d = ( (loc[0]-locs[pt,0])**2 + (loc[1]-locs[pt,1])**2 )**(0.5)
                 dists[d] = i # see what I did there?
             nearest = dists[min(dists)]
             ind = ts.individual(nearest)
@@ -257,7 +257,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         sampling_width = 0
         for i in range(0,n-1):
             for j in range(i+1,n):
-                d = ( (locs[i,0]-locs[j,0])**2 + (locs[i,1]-locs[j,1])**2 )**(1/2)
+                d = ( (locs[i,0]-locs[j,0])**2 + (locs[i,1]-locs[j,1])**2 )**(0.5)
                 if d > sampling_width:
                     sampling_width = float(d)
         
