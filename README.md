@@ -1,3 +1,7 @@
+Be sure to check out our newer method, [`disperseNN2`](https://github.com/kr-15
+colab/disperseNN2).
+
+
 # disperseNN
 
 - [disperseNN](#dispersenn)
