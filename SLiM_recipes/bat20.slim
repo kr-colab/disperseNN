@@ -77,19 +77,18 @@ early() {
         print(c("Finished tick", sim.cycle, "; N=", p0.individualCount));
         GENTIME[community.tick - 1] = mean(p0.individuals.meanParentAge);	
         if (p0.individualCount < (0.75*K*W*W)){
-           catn("Population declined more than 25% in first 100 gens.");
+           catn("Population declined more than 25% in first 100 ticks");
            sim.simulationFinished();
         }
         else{
-                GENTIME[community.tick - 1] = mean(p0.individuals.meanParentAge);	
 		// end after a number of ticks
 		if (sim.cycle == ticks){
-                   sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
-	           sim.treeSeqOutput(
-			"generation_time.trees",
-		   	metadata=Dictionary("generation_times", GENTIME)
+                   sim.treeSeqOutput(
+			paste(c(OUTNAME,"_",SEED,".trees"), sep=""),
+			metadata=Dictionary("generation_times", GENTIME)
 			);
-                   catn("Done! Mean generation time " + asString(mean(GENTIME[(ticks/2):(ticks-1)])));
+		   T_gen = mean(GENTIME[asInteger(ticks/2):(ticks-1)]);
+                   catn("Done! Mean generation time " + asString(T_gen));
                    sim.simulationFinished();
                 }
 	    }
