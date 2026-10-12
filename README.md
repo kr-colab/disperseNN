@@ -294,7 +294,7 @@ Note: the carrying capacity in this model, `K`, corresponds roughly to density, 
 Next we will recapitate the tree sequences.
 We choose to do this step up front, as it makes the training step much faster.
 However you may choose to skip this preliminary step, and instead recapitate on-the-fly during training using `--recapitate True`, which has the benefit of adding variation to the training set.
-You must also provide a generation time (via the `--generation_time` flag if used on-the-fly) to convert time units from generations in msprime to ticks from SLiM: see the [PySlim docs](https://tskit.dev/pyslim/docs/latest/time_units.html) for instructions on measuring generation time in SLiM.
+You must also provide the generation time (via the `--generation_time` flag if used on-the-fly) to convert time units from generations in msprime to ticks from SLiM: see the [PySlim docs](https://tskit.dev/pyslim/docs/latest/time_units.html) for instructions on measuring generation time in SLiM.
 In Smith et al. (2023) the time units were not converted (i.e., generation_time=1.0).
 The below example uses a generation time of 5.25 SLiM ticks.
 
