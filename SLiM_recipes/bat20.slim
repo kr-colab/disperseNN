@@ -31,6 +31,8 @@ initialize() {
     initializeInteractionType(2, "xy", reciprocal=T, maxDistance=SM * 3);
     i2.setInteractionFunction("n", 1.0/(2*PI*SM^2), SM);
 
+    // recording generation time
+    defineGlobal("GENTIME", rep(NAN, ticks));
 }
 
 reproduction() {
@@ -72,22 +74,25 @@ early() {
 }
 
 1: late() {
-        print(c("Finished generation", sim.cycle, "; N=", p0.individualCount));
+        print(c("Finished tick", sim.cycle, "; N=", p0.individualCount));
+        GENTIME[community.tick - 1] = mean(p0.individuals.meanParentAge);	
         if (p0.individualCount < (0.75*K*W*W)){
            catn("Population declined more than 25% in first 100 gens.");
            sim.simulationFinished();
         }
         else{
+                GENTIME[community.tick - 1] = mean(p0.individuals.meanParentAge);	
 		// end after a number of ticks
 		if (sim.cycle == ticks){
                    sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
-                   catn("Done.");
+	           sim.treeSeqOutput(
+			"generation_time.trees",
+		   	metadata=Dictionary("generation_times", GENTIME)
+			);
+                   catn("Done! Mean generation time " + asString(mean(GENTIME[(ticks/2):(ticks-1)])));
                    sim.simulationFinished();
                 }
 	    }
         }
 
-
 999999999 late() {} // jerry-rig. I haven't taken the time to figure out how to avoid this.
-
-
