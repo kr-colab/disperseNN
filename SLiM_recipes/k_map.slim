@@ -81,7 +81,7 @@ early() {
 
 1: late() {
    print(c("Finished generation", sim.cycle, "; N=", p0.individualCount));
-   if (sim.cycle == maxgens){
+   if (sim.cycle == ticks){
       sim.treeSeqOutput(paste(c(OUTNAME,"_",SEED,".trees"), sep=""));
       catn("Done.");
       sim.simulationFinished();

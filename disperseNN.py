@@ -111,7 +111,10 @@ parser.add_argument(
     help="proportion of weights to zero at the dropout layer.",
 )
 parser.add_argument(
-    "--recapitate", type=str, help="recapitate on-the-fly; True or False"
+    "--recapitate", type=str, help="recapitate on-the-fly; True or False",
+)
+parser.add_argument(
+    "--generation_time", type=float, help="generation time in units of SLiM ticks"
 )
 parser.add_argument(
     "--mutate", type=str, help="add mutations on-the-fly; True or False"
@@ -299,6 +302,7 @@ def make_generator_params_dict(
         "preprocessed": args.preprocessed,
         "num_reps": args.num_reps,
         "empirical_locs": empirical_locs,
+        "generation_time": args.generation_time,
     }
     return params
 

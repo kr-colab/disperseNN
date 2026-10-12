@@ -77,5 +77,6 @@ def check_params(args):
         elif args.recapitate == None:
             print("specify whether or not to recapitate the tree sequences")
             exit()
-
-
+    if args.recapitate == "True" and args.generation_time is None:
+        print("generation time in units of SLiM ticks must be provided to recapitate.")
+        exit()
