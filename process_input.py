@@ -204,18 +204,19 @@ def ibd(genos, coords, phase, num_snps):
     Nw = (1 / b)
     print("IBD r^2, slope, Nw:", r2, b, Nw)
 
-def recapitate(ts, r, rnseed):
+def recapitate(ts, r, rnseed, generation_time):
 
     ### inputs:
-    # ts: tree sequence, loaded via tskit.load()
-    # r: recombination rate
-    # rnseed: random number seed, e.g. the simulatoin id #                                                              
+    # ts:  tree sequence, loaded via tskit.load()
+    # r:  recombination rate
+    # rnseed:  random number seed, e.g. the simulatoin id
+    # generation_time:  in units of SLiM ticks
 
     # count individuals
     alive_inds = []
     for i in ts.individuals():
         alive_inds.append(i.id)
-    Ne = len(alive_inds)
+    N = len(alive_inds)
 
     # check for extra populations
     if ts.num_populations != 1:
@@ -224,11 +225,11 @@ def recapitate(ts, r, rnseed):
 
     # recapitate
     demography = msprime.Demography.from_tree_sequence(ts)
-    demography["p0"].initial_size = Ne
+    demography["p0"].initial_size = N * generation_time  # in SLiM ticks
     ts = msprime.sim_ancestry(
             initial_state=ts,
             demography=demography,
-            recombination_rate=r,
+            recombination_rate=r / generation_time,  # in SLiM ticks
             random_seed=rnseed,
     )
 

@@ -163,7 +163,7 @@ slim -d SEED=12345 \
      -d r=1e-8 \
      -d W=50 \
      -d G=1e8 \
-     -d maxgens=100000 \
+     -d ticks=100000 \
      -d OUTNAME="'temp_wd/output'" \
      SLiM_recipes/bat20.slim
        # Note the two sets of quotes around the output name
@@ -178,10 +178,10 @@ Command line arguments are passed to SLiM using the `-d` flag followed by the va
 - `r` -  per base per genertation recombination rate.
 - `W` - the height and width of the geographic spatial boundaries.
 - `G` - total size of the simulated genome.
-- `maxgens` - number of generations to run simulation.
+- `ticks` - number of SLiM ticks to run simulation.
 - `OUTNAME` - prefix to name output files.
 
-Note: after running SLiM for a fixed number of generations, the simulation is still not complete, as many trees will likely not have coalesced still. We usually finish the simulation backwards in time using mspime, e.g., "recapitation". This can either be done before training (recommended; see example below) or during training using the `recapitate` flag. 
+Note: after running SLiM for a fixed number of ticks, the simulation is still not complete, as many trees will likely not have fully coalesced. We usually finish the simulation backwards in time using mspime, e.g., "recapitation". This can either be done before training (recommended; see example below) or during training using the `recapitate` flag.
 
 Simulation programs other than SLiM may be used to make training data, as long as the output is processed into tensors of the necessary shape. 
 Given the strict format of the input files, we do not recommend users attempt to generate training data from sources other than SLiM.
@@ -284,21 +284,27 @@ mkdir temp_wd/TreeSeqs
 for i in {1..100}
 do
     sigma=$(python -c 'from scipy.stats import loguniform; print(loguniform.rvs(0.2,1.5))')
-    echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d maxgens=100 -d OUTNAME=\"'temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> temp_wd/sim_commands.txt
+    echo "slim -d SEED=$i -d sigma=$sigma -d K=6 -d mu=0 -d r=1e-8 -d W=50 -d G=1e8 -d ticks=100 -d OUTNAME=\"'temp_wd/TreeSeqs/output'\" ../disperseNN/SLiM_recipes/bat20.slim" >> temp_wd/sim_commands.txt
 done
 parallel -j 2 < temp_wd/sim_commands.txt
 ```
 
 Note: the carrying capacity in this model, `K`, corresponds roughly to density, but the actual density will fluctuate a bit.
 
-Next we will recapitate the tree sequences. We choose to do this step up front, as it makes the training step much faster. However you may choose to skip this preliminary step, and instead recapitate on-the-fly during training using `--recapitate True`, which has the benefit of adding variation to the training set. 
+Next we will recapitate the tree sequences.
+We choose to do this step up front, as it makes the training step much faster.
+However you may choose to skip this preliminary step, and instead recapitate on-the-fly during training using `--recapitate True`, which has the benefit of adding variation to the training set.
+You must also provide the generation time (via the `--generation_time` flag if used on-the-fly) to convert time units from generations in msprime to ticks from SLiM: see the [PySlim docs](https://tskit.dev/pyslim/docs/latest/time_units.html) for instructions on measuring generation time in SLiM.
+In Smith et al. (2023) the time units were not converted (i.e., generation_time=1.0).
+The below example uses a generation time of 5.25 SLiM ticks.
 
 This code block recapitates (runs for a few minutes, to an hour, depending on threads):
 
 ```bash
+generation_time=5.25
 for i in {1..100};
 do
-    echo "python -c 'import tskit; from process_input import *; ts=tskit.load(\"temp_wd/TreeSeqs/output_$i.trees\"); ts=recapitate(ts,1e-8,$i); ts.dump(\"temp_wd/TreeSeqs/output_$i"_"recap.trees\")'" >> temp_wd/recap_commands.txt
+    echo "python -c 'import tskit; from process_input import *; ts=tskit.load(\"temp_wd/TreeSeqs/output_$i.trees\"); ts=recapitate(ts,1e-8,$i,$generation_time); ts.dump(\"temp_wd/TreeSeqs/output_$i"_"recap.trees\")'" >> temp_wd/recap_commands.txt
     echo temp_wd/TreeSeqs/output_$i"_"recap.trees >> temp_wd/tree_list.txt
 done   
 parallel -j 2 < temp_wd/recap_commands.txt
@@ -324,7 +330,7 @@ Using 20 dedicated threads (and batch size=20), this step should take several ho
 Our training command will use a similar settings to the above example "Training: tree sequences as input".
 Of note, the min and max *n* are both set to 14 because we want to analyze dispersal in a subset of exactly 14 individuals from our empirical data (see below).
 We will sample 100 partially overlapping samples of n=14. 
-This is specified via the `repeated_samples` flag, 
+This is specified via the `repeated_samples` flag,
 and will result in a total training set of size 5,000.
 
 ```bash

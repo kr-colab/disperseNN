@@ -39,6 +39,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     preprocessed: bool
     num_reps: int
     empirical_locs: list
+    generation_time: float
 
     def __attrs_post_init__(self):
         "Initialize a few things"
@@ -156,7 +157,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         # recapitate
         if self.recapitate == "True":
-            ts = recapitate(ts, self.rho, seed)
+            ts = recapitate(ts, self.rho, seed, self.generation_time)
         
         # crop map
         if self.sampling_width != None:
